@@ -15,8 +15,10 @@ from .const import (
     DOMAIN,
     MODE_TO_STR,
     REG_PUMP_MODE,
-    REG_PUMP_SPEED,
+    REG_RUN_STATE,
     REG_WATER_TEMP,
+    RUN_STATE,
+    RUN_STATE_RUNNING,
 )
 from .coordinator import DontekCoordinator
 from .entity import DontekEntity
@@ -30,7 +32,8 @@ async def async_setup_entry(
         [
             WaterTemperatureSensor(coordinator),
             PumpStatusSensor(coordinator),
-            PumpSpeedSensor(coordinator),
+            PumpActivitySensor(coordinator),
+            RunningSpeedSensor(coordinator),
         ]
     )
 
@@ -72,19 +75,44 @@ class PumpStatusSensor(DontekEntity, SensorEntity):
         return MODE_TO_STR.get(mode, f"Unknown ({mode})")
 
 
-class PumpSpeedSensor(DontekEntity, SensorEntity):
-    """Currently selected pump speed (1-4)."""
+class PumpActivitySensor(DontekEntity, SensorEntity):
+    """What the pump is doing right now (Running / Priming / Idle / ...)."""
 
-    _attr_translation_key = "pump_speed"
+    _attr_translation_key = "pump_activity"
+
+    def __init__(self, coordinator: DontekCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.mac}_pump_activity"
+
+    @property
+    def native_value(self) -> str | None:
+        word = self.reg(REG_RUN_STATE)
+        if word is None:
+            return None
+        state = (word >> 8) & 0xFF
+        return RUN_STATE.get(state, "Idle")
+
+
+class RunningSpeedSensor(DontekEntity, SensorEntity):
+    """The speed the pump is actually running at right now (1-4).
+
+    This reflects the live filter schedule and can differ from the set speed
+    while in Auto mode. It is only meaningful while the pump is running.
+    """
+
+    _attr_translation_key = "running_speed"
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: DontekCoordinator) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{coordinator.mac}_pump_speed"
+        self._attr_unique_id = f"{coordinator.mac}_running_speed"
 
     @property
     def native_value(self) -> int | None:
-        raw = self.reg(REG_PUMP_SPEED)
-        if raw is None:
+        word = self.reg(REG_RUN_STATE)
+        if word is None:
             return None
-        return raw + 1  # register is zero-based
+        state = (word >> 8) & 0xFF
+        if state != RUN_STATE_RUNNING:
+            return None  # not running -> no meaningful speed
+        return (word & 0xFF) + 1  # low byte is 0-based

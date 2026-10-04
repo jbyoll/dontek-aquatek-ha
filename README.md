@@ -36,10 +36,15 @@ same hardware with different labels.
 | | Entity | Details |
 |---|---|---|
 | 🌡️ | **Water temperature** | `sensor` — pool water temperature in °C |
-| ⚙️ | **Pump status** | `sensor` — Off / On / Auto |
-| 🔢 | **Pump speed** | `sensor` — current speed 1–4 |
+| ⚙️ | **Pump mode status** | `sensor` — Off / On / Auto |
+| 🏃 | **Pump activity** | `sensor` — live state: Running / Priming / Idle … |
+| 🔢 | **Running speed** | `sensor` — the speed the pump is *actually* running at (1–4) |
 | 🎛️ | **Pump mode** | `select` — set Off / On / Auto |
-| 🏊 | **Pump speed set** | `select` — set speed 1 / 2 / 3 / 4 |
+| 🏊 | **Pump speed** | `select` — set the default speed 1 / 2 / 3 / 4 |
+| 📊 | **Speed 1–4 power** | `number` — tune each speed's power % |
+
+> In **Auto** mode the pump follows its filter schedule, so the live **Running speed** can
+> differ from the **Pump speed** you set — just like the official app's status screen.
 
 - ☁️ **No extra hardware** — talks to the Dontek cloud, works from anywhere.
 - 🪶 **No heavy dependencies** — uses Home Assistant's built-in MQTT library and signs the
@@ -89,7 +94,9 @@ control goes through Dontek's AWS cloud:
 |---|---|---|
 | Water temperature | `57545` | °C = raw ÷ 256 |
 | Pump mode | `65485` | `0` = Off · `1025` = On · `65535` = Auto |
-| Pump speed select | `65463` | `0–3` → Speed 1–4 (display = value + 1) |
+| Pump speed (set/default) | `65463` | `0–3` → Speed 1–4 (display = value + 1) |
+| Live run-state word | `92` | high byte = state (`12` = Running) · low byte = running speed (0–3) |
+| Speed 1–4 power % | `65478`–`65481` | 0–100 % |
 | Speed 1–4 RPM setpoints | `65319`–`65322` | RPM |
 
 ## 🔧 Troubleshooting
