@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-10-05
+
+### Fixed
+- **Stale data after a dropped connection.** AWS IoT can close the websocket without a
+  clean disconnect, leaving the `connected` flag `True`; the coordinator then published
+  reads into a dead socket and, because the register cache was already non-empty, served
+  the last values indefinitely while appearing "available". The coordinator now tracks a
+  last-reply timestamp and requires a **fresh** status reply every poll, forcing a
+  reconnect (with newly signed credentials) and one retry if none arrives — and marking
+  the device unavailable rather than showing stale readings if it still can't reach the cloud.
+
 ## [0.5.0] - 2026-10-04
 
 ### Added

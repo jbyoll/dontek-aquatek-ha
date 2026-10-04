@@ -148,6 +148,9 @@ class DontekClient:
         self.status_topic = f"{self.prefix}/status/psw"
         self.registers: dict[int, int] = {}
         self.connected = False
+        # monotonic timestamp of the last status reply actually received, used
+        # by the coordinator to tell a live poll from a silently-dead socket.
+        self.last_update: float = 0.0
         self._client: mqtt.Client | None = None
         self._creds: dict | None = None
         self._creds_at = 0.0
@@ -229,6 +232,7 @@ class DontekClient:
             reg, val = vals[i], vals[i + 1]
             self.registers[reg] = val
             changed[reg] = val
+        self.last_update = time.monotonic()
         if self._on_update:
             self._on_update(changed)
 
@@ -239,6 +243,26 @@ class DontekClient:
             self.disconnect()
             self.connect()
             time.sleep(2)
+
+    def _wait_connected(self, tries: int = 20) -> None:
+        for _ in range(tries):
+            if self.connected:
+                return
+            time.sleep(0.5)
+
+    def ensure_session(self) -> None:
+        """Reconnect if the flag says we're down or the signed creds are stale."""
+        if not self.connected or time.time() - self._creds_at > _CREDS_TTL:
+            self.disconnect()
+            self.connect()
+            self._wait_connected()
+
+    def reconnect(self) -> None:
+        """Force a fresh session with newly signed credentials."""
+        _LOGGER.debug("Dontek %s forcing reconnect", self.mac)
+        self.disconnect()
+        self.connect()
+        self._wait_connected()
 
     # -- protocol ---------------------------------------------------------
     def _publish(self, payload: dict) -> None:
