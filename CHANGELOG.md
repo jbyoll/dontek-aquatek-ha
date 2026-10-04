@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-04
+
+### Added
+- **Filter Time 1 schedule controls** — the schedule the pump follows in Auto mode:
+  - `switch` **Filter 1 enabled** (register 65318)
+  - `time` **Filter 1 start** / **Filter 1 end** (registers 65319 / 65320)
+  - `select` **Filter 1 speed** (register 65473)
+
 ## [0.2.0] - 2026-10-04
 
 ### Added
@@ -32,5 +40,6 @@ Initial release.
   - Pump mode select (Off / On / Auto).
   - Pump speed selector (1–4).
 
+[0.3.0]: https://github.com/jbyoll/dontek-aquatek-ha/releases/tag/v0.3.0
 [0.2.0]: https://github.com/jbyoll/dontek-aquatek-ha/releases/tag/v0.2.0
 [0.1.0]: https://github.com/jbyoll/dontek-aquatek-ha/releases/tag/v0.1.0

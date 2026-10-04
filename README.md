@@ -42,6 +42,9 @@ same hardware with different labels.
 | 🎛️ | **Pump mode** | `select` — set Off / On / Auto |
 | 🏊 | **Pump speed** | `select` — set the default speed 1 / 2 / 3 / 4 |
 | 📊 | **Speed 1–4 power** | `number` — tune each speed's power % |
+| ⏱️ | **Filter 1 start / end** | `time` — the filter schedule window |
+| 🔁 | **Filter 1 enabled** | `switch` — turn the schedule on/off |
+| 🏊 | **Filter 1 speed** | `select` — speed used by the schedule |
 
 > In **Auto** mode the pump follows its filter schedule, so the live **Running speed** can
 > differ from the **Pump speed** you set — just like the official app's status screen.
@@ -97,7 +100,9 @@ control goes through Dontek's AWS cloud:
 | Pump speed (set/default) | `65463` | `0–3` → Speed 1–4 (display = value + 1) |
 | Live run-state word | `92` | high byte = state (`12` = Running) · low byte = running speed (0–3) |
 | Speed 1–4 power % | `65478`–`65481` | 0–100 % |
-| Speed 1–4 RPM setpoints | `65319`–`65322` | RPM |
+| Filter Time 1 enabled | `65318` | 0 / 1 |
+| Filter Time 1 start / end | `65319` / `65320` | hour × 256 + minute (08:00 = 2048) |
+| Filter Time 1 speed | `65473` | 0–3 → Speed 1–4 |
 
 ## 🔧 Troubleshooting
 
