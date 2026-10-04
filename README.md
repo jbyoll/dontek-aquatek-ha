@@ -96,7 +96,8 @@ control goes through Dontek's AWS cloud:
 | Reading / control | Register | Encoding |
 |---|---|---|
 | Water temperature | `57545` | °C = raw ÷ 256 |
-| Pump mode | `65485` | `0` = Off · `1025` = On · `65535` = Auto |
+| Pump mode (Hayward VSP) | `65485` | `0` = Off · `1025` = On · `65535` = Auto |
+| Filter pump mode (Socket 1) | `65336` | `0` = Off · `1` = On · `2` = Auto |
 | Pump speed (set/default) | `65463` | `0–3` → Speed 1–4 (display = value + 1) |
 | Live run-state word | `92` | high byte = state (`12` = Running) · low byte = running speed (0–3) |
 | Speed 1–4 power % | `65478`–`65481` | 0–100 % |

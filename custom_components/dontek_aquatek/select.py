@@ -9,7 +9,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     DOMAIN,
     FILTER_TIMES,
+    FP_MODE_TO_STR,
+    FP_STR_TO_MODE,
     MODE_TO_STR,
+    REG_FILTER_PUMP_MODE,
     REG_PUMP_MODE,
     REG_PUMP_SPEED,
     SPEED_COUNT,
@@ -26,6 +29,7 @@ async def async_setup_entry(
     entities: list[DontekEntity] = [
         PumpModeSelect(coordinator),
         PumpSpeedSelect(coordinator),
+        FilterPumpModeSelect(coordinator),
     ]
     for ft, regs in FILTER_TIMES.items():
         entities.append(FilterTimeSpeedSelect(coordinator, ft, regs["speed"]))
@@ -54,6 +58,27 @@ class PumpModeSelect(DontekEntity, SelectEntity):
         if value is None:
             return
         await self.coordinator.async_write_register(REG_PUMP_MODE, value)
+
+
+class FilterPumpModeSelect(DontekEntity, SelectEntity):
+    """Filter Pump (Socket 1) Off / On / Auto (register 65336)."""
+
+    _attr_translation_key = "filter_pump_mode"
+    _attr_options = ["Off", "On", "Auto"]
+
+    def __init__(self, coordinator: DontekCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.mac}_filter_pump_mode"
+
+    @property
+    def current_option(self) -> str | None:
+        return FP_MODE_TO_STR.get(self.reg(REG_FILTER_PUMP_MODE))
+
+    async def async_select_option(self, option: str) -> None:
+        value = FP_STR_TO_MODE.get(option)
+        if value is None:
+            return
+        await self.coordinator.async_write_register(REG_FILTER_PUMP_MODE, value)
 
 
 class PumpSpeedSelect(DontekEntity, SelectEntity):
