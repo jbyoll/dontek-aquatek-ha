@@ -23,3 +23,6 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # "brands" is skipped until the icon is accepted into home-assistant/brands
+          # (a separate PR). The integration still installs fine as a custom repo.
+          ignore: brands
