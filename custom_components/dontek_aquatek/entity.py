@@ -1,7 +1,11 @@
 """Shared base entity for Dontek Aquatek."""
 from __future__ import annotations
 
-from homeassistant.helpers.device_info import DeviceInfo
+from homeassistant.helpers.device_registry import (
+    CONNECTION_NETWORK_MAC,
+    DeviceInfo,
+    format_mac,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_NAME, DOMAIN
@@ -21,7 +25,7 @@ class DontekEntity(CoordinatorEntity[DontekCoordinator]):
             name=name,
             manufacturer="Dontek Electronics",
             model="Aquatek pool controller",
-            connections={("mac", coordinator.mac)},
+            connections={(CONNECTION_NETWORK_MAC, format_mac(coordinator.mac))},
         )
 
     @property

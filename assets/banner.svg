@@ -1,0 +1,45 @@
+<svg width="1280" height="320" viewBox="0 0 1280 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a66c2"/>
+      <stop offset="1" stop-color="#083a73"/>
+    </linearGradient>
+    <linearGradient id="icbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#29b6e6"/>
+      <stop offset="1" stop-color="#0a66c2"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d9f2ff"/>
+    </linearGradient>
+    <radialGradient id="imp" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#eaf8ff"/>
+      <stop offset="1" stop-color="#9fd8f2"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1280" height="320" fill="url(#bg)"/>
+  <path d="M0 230 Q220 190 440 230 T880 230 T1320 230 V320 H0 Z" fill="#ffffff" opacity="0.06"/>
+  <path d="M0 262 Q220 224 440 262 T880 262 T1320 262 V320 H0 Z" fill="#ffffff" opacity="0.06"/>
+
+  <!-- icon tile -->
+  <g transform="translate(96,64)">
+    <rect width="192" height="192" rx="42" fill="url(#icbg)"/>
+    <path d="M96 30 C96 30 56 76 56 108 a40 40 0 0 0 80 0 C136 76 96 30 96 30 Z" fill="url(#drop)"/>
+    <g transform="translate(96,108)">
+      <g fill="url(#imp)">
+        <path d="M0,-26 C8,-26 13,-18 9,-7 C5,-2 -5,-2 -9,-7 C-13,-18 -8,-26 0,-26 Z"/>
+        <path d="M0,-26 C8,-26 13,-18 9,-7 C5,-2 -5,-2 -9,-7 C-13,-18 -8,-26 0,-26 Z" transform="rotate(72)"/>
+        <path d="M0,-26 C8,-26 13,-18 9,-7 C5,-2 -5,-2 -9,-7 C-13,-18 -8,-26 0,-26 Z" transform="rotate(144)"/>
+        <path d="M0,-26 C8,-26 13,-18 9,-7 C5,-2 -5,-2 -9,-7 C-13,-18 -8,-26 0,-26 Z" transform="rotate(216)"/>
+        <path d="M0,-26 C8,-26 13,-18 9,-7 C5,-2 -5,-2 -9,-7 C-13,-18 -8,-26 0,-26 Z" transform="rotate(288)"/>
+      </g>
+      <circle r="8" fill="#0a66c2"/>
+      <circle r="3.4" fill="#eaf8ff"/>
+    </g>
+  </g>
+
+  <!-- wordmark -->
+  <text x="336" y="150" font-family="Segoe UI, Arial, sans-serif" font-size="68" font-weight="700" fill="#ffffff">Dontek Aquatek</text>
+  <text x="340" y="206" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="400" fill="#bfe3f5">Pool controller integration for Home Assistant</text>
+</svg>
