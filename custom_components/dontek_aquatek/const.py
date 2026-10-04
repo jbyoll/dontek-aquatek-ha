@@ -56,6 +56,8 @@ def hm_to_reg(hour: int, minute: int) -> int:
     """Encode (hour, minute) into a packed time register value."""
     return (int(hour) << 8) | (int(minute) & 0xFF)
 RUN_STATE = {
+    0: "Off",
+    1: "Off",
     2: "Powering up",
     3: "Powering up",
     4: "Powering up",
