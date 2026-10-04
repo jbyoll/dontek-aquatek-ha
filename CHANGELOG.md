@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-10-04
+
+### Added
+- **Filter Times 2, 3 and 4** — full read/write for all four schedules the pump can
+  follow in Auto mode (previously only Filter Time 1 was exposed):
+  - `switch` **Filter N enabled** (N = 1–4)
+  - `time` **Filter N start** / **Filter N end**
+  - `select` **Filter N speed**
+  - Registers: FT1 65319/65320/65473, FT2 65321/65322/65474,
+    FT3 65469/65470/65475, FT4 65471/65472/65476 (mapped by live capture).
+
+### Fixed
+- **Filter Time enable is a bitmask.** Register 65318 holds one bit per schedule
+  (bit 0 = FT1 … bit 3 = FT4), not a per-schedule boolean. Enabling/disabling a
+  Filter Time now flips only its bit via read-modify-write, so toggling one schedule
+  no longer wipes the others. (Previously writing 0/1 to 65318 could clear FT2–4.)
+
+### Notes
+- Run Once (one-shot "run for N minutes") was also mapped (enable 57630, absolute
+  start/end 57650/57670) but is not yet exposed as entities.
+
 ## [0.3.1] - 2026-10-04
 
 ### Fixed

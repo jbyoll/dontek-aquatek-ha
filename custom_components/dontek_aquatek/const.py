@@ -71,3 +71,23 @@ RUN_STATE = {
     12: "Running",
 }
 RUN_STATE_RUNNING = 12
+
+# --- All four Filter Time schedules (mapped live 2026-10-04 by diff) ---
+# Enable is a BITMASK in REG_FT_ENABLE_MASK: bit (n-1) set => Filter Time n on.
+# Observed: reg 65318 = 1 (FT1 only) ... 15 (all four enabled).
+REG_FT_ENABLE_MASK = 65318
+FILTER_TIME_COUNT = 4
+# from/to are packed hour*256+minute; speed is 0-based (0-3 -> Speed 1-4).
+FILTER_TIMES = {
+    1: {"from": 65319, "to": 65320, "speed": 65473},
+    2: {"from": 65321, "to": 65322, "speed": 65474},
+    3: {"from": 65469, "to": 65470, "speed": 65475},
+    4: {"from": 65471, "to": 65472, "speed": 65476},
+}
+
+# Run Once (one-shot): enable 57630 (1=on, 0xFF00=off); start/end are absolute
+# packed times the controller computes from the chosen duration. Not exposed as
+# entities yet (one-shot "run for N minutes now" maps awkwardly to HA).
+REG_RUNONCE_ENABLE = 57630
+REG_RUNONCE_START = 57650
+REG_RUNONCE_END = 57670
