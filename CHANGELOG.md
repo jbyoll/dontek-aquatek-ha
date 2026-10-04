@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-04
+
+### Added
+- **Filter pump mode** — `select` for the Socket 1 appliance relay (Off / On / Auto,
+  register 65336). This is the controller's second pump output, separate from the
+  Hayward variable-speed pump. Mapped live from the app's own writes.
+
+### Notes
+- Confirmed (by driving the vendor app end-to-end) that on this controller the only
+  switchable outputs are the two pumps; the other sockets are "Always On" and no
+  lights / heating / solar / spa / valves are wired, so there is nothing further to map
+  unless the hardware configuration changes.
+
 ## [0.4.0] - 2026-10-04
 
 ### Added

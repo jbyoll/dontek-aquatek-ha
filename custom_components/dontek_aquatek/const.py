@@ -22,6 +22,13 @@ MODE_AUTO = 65535
 MODE_TO_STR = {MODE_OFF: "Off", MODE_ON: "On", MODE_AUTO: "Auto"}
 STR_TO_MODE = {v: k for k, v in MODE_TO_STR.items()}
 
+# Filter Pump = the Socket 1 appliance relay (a separate pump the controller
+# switches on/off/auto), distinct from the Hayward variable-speed pump above.
+# Mapped live 2026-10-04 by watching the app's writes. Simple 0/1/2 encoding.
+REG_FILTER_PUMP_MODE = 65336
+FP_MODE_TO_STR = {0: "Off", 1: "On", 2: "Auto"}
+FP_STR_TO_MODE = {v: k for k, v in FP_MODE_TO_STR.items()}
+
 # Pump speed selector. Register is zero-based; displayed speed = value + 1 (4 speeds).
 REG_PUMP_SPEED = 65463
 SPEED_COUNT = 4

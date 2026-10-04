@@ -51,6 +51,9 @@
       },
       "filter4_speed": {
         "name": "Filter 4 speed"
+      },
+      "filter_pump_mode": {
+        "name": "Filter pump mode"
       }
     },
     "number": {
