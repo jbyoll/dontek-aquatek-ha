@@ -21,12 +21,19 @@
   "entity": {
     "sensor": {
       "water_temperature": { "name": "Water temperature" },
-      "pump_status": { "name": "Pump status" },
-      "pump_speed": { "name": "Pump speed" }
+      "pump_status": { "name": "Pump mode status" },
+      "pump_activity": { "name": "Pump activity" },
+      "running_speed": { "name": "Running speed" }
     },
     "select": {
       "pump_mode": { "name": "Pump mode" },
-      "pump_speed_select": { "name": "Pump speed set" }
+      "pump_speed_select": { "name": "Pump speed" }
+    },
+    "number": {
+      "speed_1_pct": { "name": "Speed 1 power" },
+      "speed_2_pct": { "name": "Speed 2 power" },
+      "speed_3_pct": { "name": "Speed 3 power" },
+      "speed_4_pct": { "name": "Speed 4 power" }
     }
   }
 }

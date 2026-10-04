@@ -28,3 +28,23 @@ SPEED_COUNT = 4
 
 # RPM setpoints for speeds 1..4.
 REG_SPEED_RPM = {1: 65319, 2: 65320, 3: 65321, 4: 65322}
+
+# Per-speed power as a percentage (what the app's Pump Setup screen edits).
+REG_SPEED_PCT = {1: 65478, 2: 65479, 3: 65480, 4: 65481}
+
+# Live run-state word: high byte = state, low byte = running speed index (0-3).
+REG_RUN_STATE = 92
+RUN_STATE = {
+    2: "Powering up",
+    3: "Powering up",
+    4: "Powering up",
+    5: "Priming",
+    6: "Setting speed",
+    7: "Setting speed",
+    8: "Setting speed",
+    9: "Switching on",
+    10: "Switching on",
+    11: "Switching on",
+    12: "Running",
+}
+RUN_STATE_RUNNING = 12
