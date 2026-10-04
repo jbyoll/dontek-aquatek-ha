@@ -1,6 +1,7 @@
 """DataUpdateCoordinator wrapping the Dontek MQTT client."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from datetime import timedelta
@@ -74,9 +75,15 @@ class DontekCoordinator(DataUpdateCoordinator[dict[int, int]]):
             return dict(self.client.registers)
 
         try:
-            regs = await self.hass.async_add_executor_job(_refresh)
+            # hard ceiling so a wedged network thread can never stall the
+            # coordinator indefinitely (the executor thread is abandoned, the
+            # next interval retries with a fresh session).
+            async with asyncio.timeout(50):
+                regs = await self.hass.async_add_executor_job(_refresh)
         except UpdateFailed:
             raise
+        except (asyncio.TimeoutError, TimeoutError) as err:
+            raise UpdateFailed("Timed out talking to the Dontek cloud") from err
         except Exception as err:  # noqa: BLE001
             raise UpdateFailed(f"Error talking to Dontek cloud: {err}") from err
         if not regs:

@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-10-05
+
+### Fixed
+- **Polling could wedge permanently after a dropped connection** (the real cause behind
+  the stale data 0.5.1 tried to address). When the websocket dropped, the next poll tore
+  the old client down with paho's `loop_stop()`, which *joins* the network thread — and if
+  that thread was blocked on a dead socket, the join never returned, hanging that poll and
+  every poll after it (values frozen, but the entity still showed "available"). The old
+  client is now torn down on a throwaway daemon thread so reconnects never block, and the
+  coordinator poll has a hard 50 s ceiling as a backstop.
+
 ## [0.5.1] - 2026-10-05
 
 ### Fixed

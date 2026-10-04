@@ -161,15 +161,29 @@ class DontekClient:
         self._on_update = cb
 
     # -- connection -------------------------------------------------------
-    def connect(self) -> None:
-        with self._lock:
-            # tear down any previous session so we never orphan a connection
-            if self._client is not None:
+    @staticmethod
+    def _abandon(client: "mqtt.Client") -> None:
+        """Tear a client down off-thread.
+
+        paho's ``loop_stop()`` JOINS the network thread; if that thread is wedged
+        in a blocking send on a half-dead socket it never returns, which would
+        otherwise hang the coordinator poll (and every poll after it) forever. We
+        hand the old client to a throwaway daemon thread and move on immediately;
+        reconnecting with the same client id makes AWS IoT drop the stale session.
+        """
+        def _kill() -> None:
+            for fn in (client.disconnect, client.loop_stop):
                 try:
-                    self._client.loop_stop()
-                    self._client.disconnect()
+                    fn()
                 except Exception:  # noqa: BLE001
                     pass
+        threading.Thread(target=_kill, daemon=True).start()
+
+    def connect(self) -> None:
+        with self._lock:
+            # tear down any previous session without ever blocking on it
+            if self._client is not None:
+                self._abandon(self._client)
                 self._client = None
                 self.connected = False
             self._creds = get_guest_credentials()
@@ -196,11 +210,7 @@ class DontekClient:
 
     def disconnect(self) -> None:
         if self._client:
-            self._client.loop_stop()
-            try:
-                self._client.disconnect()
-            except Exception:  # noqa: BLE001
-                pass
+            self._abandon(self._client)
             self._client = None
             self.connected = False
 
