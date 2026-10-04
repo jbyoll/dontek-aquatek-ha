@@ -44,25 +44,39 @@ class DontekCoordinator(DataUpdateCoordinator[dict[int, int]]):
         await self.hass.async_add_executor_job(self.client.disconnect)
 
     async def _async_update_data(self) -> dict[int, int]:
-        """Trigger a fresh register read and return the current table."""
-        def _refresh() -> dict[int, int]:
-            if not self.client.connected:
-                self.client.connect()
-                # give the broker a moment to establish + subscribe
-                for _ in range(20):
-                    if self.client.connected:
-                        break
-                    time.sleep(0.5)
+        """Request a fresh register read and return the table.
+
+        We require a *new* status reply each cycle (tracked via
+        ``client.last_update``) rather than trusting the ``connected`` flag or a
+        non-empty register cache: AWS IoT can drop the websocket without a clean
+        disconnect, which would otherwise leave us publishing into a dead socket
+        and silently serving stale values forever.
+        """
+        def _poll_once(timeout: float = 12.0) -> bool:
+            """Request a dump and wait for a reply newer than before. True if fresh."""
+            prev = self.client.last_update
             self.client.request_all()
-            # wait for the controller's status reply to populate registers
-            for _ in range(20):
-                if self.client.registers:
-                    break
+            deadline = time.monotonic() + timeout
+            while self.client.last_update <= prev:
+                if time.monotonic() >= deadline:
+                    return False
                 time.sleep(0.5)
-            return self.client.registers
+            return True
+
+        def _refresh() -> dict[int, int]:
+            # reconnect up front if the session looks down or creds are stale
+            self.client.ensure_session()
+            if not _poll_once():
+                # no fresh reply -> the connection is dead; rebuild and retry once
+                self.client.reconnect()
+                if not _poll_once():
+                    raise UpdateFailed("No fresh reply from the Dontek cloud")
+            return dict(self.client.registers)
 
         try:
             regs = await self.hass.async_add_executor_job(_refresh)
+        except UpdateFailed:
+            raise
         except Exception as err:  # noqa: BLE001
             raise UpdateFailed(f"Error talking to Dontek cloud: {err}") from err
         if not regs:
