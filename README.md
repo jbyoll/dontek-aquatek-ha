@@ -42,9 +42,9 @@ same hardware with different labels.
 | 🎛️ | **Pump mode** | `select` — set Off / On / Auto |
 | 🏊 | **Pump speed** | `select` — set the default speed 1 / 2 / 3 / 4 |
 | 📊 | **Speed 1–4 power** | `number` — tune each speed's power % |
-| ⏱️ | **Filter 1 start / end** | `time` — the filter schedule window |
-| 🔁 | **Filter 1 enabled** | `switch` — turn the schedule on/off |
-| 🏊 | **Filter 1 speed** | `select` — speed used by the schedule |
+| ⏱️ | **Filter 1–4 start / end** | `time` — each schedule window (all four filter times) |
+| 🔁 | **Filter 1–4 enabled** | `switch` — turn each schedule on/off |
+| 🏊 | **Filter 1–4 speed** | `select` — speed used by each schedule |
 
 > In **Auto** mode the pump follows its filter schedule, so the live **Running speed** can
 > differ from the **Pump speed** you set — just like the official app's status screen.
@@ -100,9 +100,10 @@ control goes through Dontek's AWS cloud:
 | Pump speed (set/default) | `65463` | `0–3` → Speed 1–4 (display = value + 1) |
 | Live run-state word | `92` | high byte = state (`12` = Running) · low byte = running speed (0–3) |
 | Speed 1–4 power % | `65478`–`65481` | 0–100 % |
-| Filter Time 1 enabled | `65318` | 0 / 1 |
-| Filter Time 1 start / end | `65319` / `65320` | hour × 256 + minute (08:00 = 2048) |
-| Filter Time 1 speed | `65473` | 0–3 → Speed 1–4 |
+| Filter Time enable mask | `65318` | **bitmask** — bit 0 = FT1 … bit 3 = FT4 (`1` = FT1 only, `15` = all four) |
+| Filter Time start / end | FT1 `65319`/`65320` · FT2 `65321`/`65322` · FT3 `65469`/`65470` · FT4 `65471`/`65472` | hour × 256 + minute (08:00 = 2048) |
+| Filter Time speed | FT1 `65473` · FT2 `65474` · FT3 `65475` · FT4 `65476` | 0–3 → Speed 1–4 |
+| Run Once (one-shot) | enable `57630` · start `57650` · end `57670` | mapped, not yet exposed as entities |
 
 ## 🔧 Troubleshooting
 
@@ -125,8 +126,10 @@ serial / QR code private.** This integration only communicates with the controll
 
 ## 🗺️ Roadmap
 
-- [ ] Map remaining registers (flow, live RPM/power readback, schedules)
+- [x] Map all four filter-time schedules (done in v0.4.0)
+- [ ] Map remaining registers (flow, live RPM/power readback)
 - [ ] `number` entities for the per-speed RPM setpoints
+- [ ] Expose Run Once as a one-shot action/button
 - [ ] Chlorinator / heater / lighting support on units that have them
 - [ ] Multiple appliances / expansion modules
 - [ ] Submit brand assets to [home-assistant/brands](https://github.com/home-assistant/brands)
