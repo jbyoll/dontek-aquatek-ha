@@ -1,69 +1,129 @@
-# Dontek Aquatek Pool Controller — Home Assistant integration
+<p align="center">
+  <img src="assets/banner.png" alt="Dontek Aquatek for Home Assistant" width="100%">
+</p>
 
-Local-cloud control of **Dontek** pool controllers (sold as **Aquatek**, **Theralux Pool+ Manager**,
-**Waterco Pooltek**, **Aquamate X** and similar) from Home Assistant.
+<h1 align="center">Dontek Aquatek — <i>Unofficial</i> Home Assistant integration</h1>
 
-It talks to Dontek's AWS IoT cloud the same way the official app does, so it works from anywhere
-without any extra hardware or a local gateway.
+<p align="center">
+  Control your <b>Dontek</b> pool controller from Home Assistant — water temperature,
+  pump mode and variable pump speed — over the same cloud the official app uses.
+</p>
 
-> ⚠️ **Status: early / community reverse-engineered.** Built for a single-pump (variable-speed pump)
-> setup. It does **not** use any official Dontek API and may break if Dontek changes their backend.
-> Not affiliated with or endorsed by Dontek Electronics.
+<p align="center">
+  <img src="https://img.shields.io/badge/status-unofficial-orange.svg?style=for-the-badge" alt="Unofficial">
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge" alt="HACS Custom"></a>
+  <a href="https://github.com/jbyoll/dontek-aquatek-ha/releases"><img src="https://img.shields.io/github/v/release/jbyoll/dontek-aquatek-ha?style=for-the-badge" alt="Release"></a>
+  <a href="https://github.com/jbyoll/dontek-aquatek-ha/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/jbyoll/dontek-aquatek-ha/validate.yml?style=for-the-badge&label=validate" alt="Validate"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/jbyoll/dontek-aquatek-ha?style=for-the-badge" alt="License"></a>
+</p>
 
-## Features
+---
 
-- **Water temperature** sensor
-- **Pump status** sensor (Off / On / Auto)
-- **Pump speed** sensor (1–4)
-- **Pump mode** select — Off / On / Auto
-- **Pump speed set** select — 1 / 2 / 3 / 4
+Works with Dontek pool controllers sold under several brands — **Aquatek**, **Theralux
+Pool+ Manager**, **Waterco Pooltek**, **Henden Control** and **Aquamate X** — which are the
+same hardware with different labels.
 
-## Installation (HACS)
+> [!IMPORTANT]
+> **This is an unofficial, community-built integration.** It is **not affiliated with,
+> authorised by, or endorsed by Dontek Electronics**, and "Dontek", "Aquatek", "Theralux",
+> "Pooltek" and related names are trademarks of their respective owners, used here only to
+> describe compatibility. It was created by reverse-engineering the app's cloud traffic, uses
+> **no official Dontek API**, and may stop working if Dontek change their backend. Use at your
+> own risk. Tested against a single variable-speed-pump setup.
 
-1. HACS → ⋮ → *Custom repositories* → add this repo, category **Integration**.
-2. Install **Dontek Aquatek Pool Controller**, then restart Home Assistant.
-3. *Settings → Devices & Services → Add Integration →* **Dontek Aquatek**.
-4. Enter the **serial number** printed on the controller label (the long number under the QR code),
-   e.g. `56559560543361145`. You can also enter the 12-character MAC directly.
+## ✨ Features
 
-(Manual install: copy `custom_components/dontek_aquatek` into your HA `config/custom_components/`.)
-
-## How it works
-
-- The controller has **no local API** — on your LAN it only serves a Wi-Fi setup page. All control
-  is via Dontek's AWS cloud.
-- Auth is an **anonymous AWS Cognito identity pool** (guest credentials — no username/password).
-- Transport is **AWS IoT MQTT over WebSockets** (SigV4-signed). This integration uses Home
-  Assistant's bundled `paho-mqtt` and signs the connection itself, so it has **no extra Python
-  dependencies** (no `boto3` / `awscrt`).
-- The controller speaks **Modbus-over-MQTT**: a JSON message
-  `{"messageId":"read"|"write","modbusReg":R,"modbusVal":[...]}` on
-  `dontek<mac>/cmd/psw`, with the controller replying on `dontek<mac>/status/psw`.
-
-### Register map used
-
-| What | Register | Encoding |
+| | Entity | Details |
 |---|---|---|
-| Water temperature | 57545 | °C = raw / 256 |
-| Pump mode | 65485 | 0 = Off, 1025 = On, 65535 = Auto |
-| Pump speed select | 65463 | 0–3 → Speed 1–4 (display = value + 1) |
-| Speed 1–4 RPM setpoints | 65319–65322 | RPM |
+| 🌡️ | **Water temperature** | `sensor` — pool water temperature in °C |
+| ⚙️ | **Pump status** | `sensor` — Off / On / Auto |
+| 🔢 | **Pump speed** | `sensor` — current speed 1–4 |
+| 🎛️ | **Pump mode** | `select` — set Off / On / Auto |
+| 🏊 | **Pump speed set** | `select` — set speed 1 / 2 / 3 / 4 |
 
-## Security note
+- ☁️ **No extra hardware** — talks to the Dontek cloud, works from anywhere.
+- 🪶 **No heavy dependencies** — uses Home Assistant's built-in MQTT library and signs the
+  AWS connection itself (no `boto3` / `awscrt`).
+- 🔐 **Your account only** — anonymous cloud access, scoped to the controller you configure.
 
-Dontek's guest cloud policy is broad: any client that knows a controller's MAC can read and write
-its registers, and the MAC is derived from the serial printed on the label. Keep your serial/QR
-private. This integration only talks to the controller you configure.
+## 📦 Installation
 
-## Roadmap / help wanted
+### HACS (recommended)
 
-- Map the remaining registers (flow, power/RPM readback, schedules, chlorinator/heater on units that
-  have them).
-- Support multiple appliances / expansion modules.
-- Optional `number` entities for the per-speed RPM setpoints.
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jbyoll&repository=dontek-aquatek-ha&category=integration)
 
-PRs and register captures from other Dontek models welcome.
+1. **HACS → ⋮ → Custom repositories** → add `jbyoll/dontek-aquatek-ha`, category **Integration**.
+2. Install **Dontek Aquatek Pool Controller** and **restart Home Assistant**.
+3. **Settings → Devices & Services → Add Integration → Dontek Aquatek**.
 
-## License
+### Manual
 
-MIT
+Copy `custom_components/dontek_aquatek` into your Home Assistant `config/custom_components/`
+folder and restart.
+
+## ⚙️ Configuration
+
+Add the integration from the UI and enter the **serial number** printed on the controller
+label — the long number under the QR code, e.g. `56559560543361145`. You can also enter the
+12-character MAC directly.
+
+<p align="center"><img src="assets/icon.png" width="96" alt=""></p>
+
+That's it — the device and its entities appear automatically.
+
+## 🧭 How it works
+
+The controller has **no local API**; on your LAN it only serves a Wi-Fi setup page, so all
+control goes through Dontek's AWS cloud:
+
+- **Auth** — an anonymous AWS **Cognito** identity pool (guest credentials, no login).
+- **Transport** — AWS **IoT MQTT over WebSockets**, SigV4-signed. This integration signs the
+  connection itself using Home Assistant's bundled `paho-mqtt`.
+- **Protocol** — **Modbus-over-MQTT**: JSON messages
+  `{"messageId":"read"|"write","modbusReg":R,"modbusVal":[…]}` on `dontek<mac>/cmd/psw`,
+  with the controller replying on `dontek<mac>/status/psw`.
+
+### Register map
+
+| Reading / control | Register | Encoding |
+|---|---|---|
+| Water temperature | `57545` | °C = raw ÷ 256 |
+| Pump mode | `65485` | `0` = Off · `1025` = On · `65535` = Auto |
+| Pump speed select | `65463` | `0–3` → Speed 1–4 (display = value + 1) |
+| Speed 1–4 RPM setpoints | `65319`–`65322` | RPM |
+
+## 🔧 Troubleshooting
+
+- **"Could not reach the controller"** when adding — double-check the serial number and that
+  the controller is powered and online (it shows up in the official app).
+- **Entities unavailable** — the integration polls the cloud every 30 s; a transient cloud or
+  Wi-Fi drop clears on the next poll.
+- Enable debug logging:
+  ```yaml
+  logger:
+    logs:
+      custom_components.dontek_aquatek: debug
+  ```
+
+## 🔒 Security note
+
+Dontek's guest cloud policy is broad: any client that knows a controller's MAC can read and
+write its registers, and the MAC is derived from the serial printed on the label. **Keep your
+serial / QR code private.** This integration only communicates with the controller you set up.
+
+## 🗺️ Roadmap
+
+- [ ] Map remaining registers (flow, live RPM/power readback, schedules)
+- [ ] `number` entities for the per-speed RPM setpoints
+- [ ] Chlorinator / heater / lighting support on units that have them
+- [ ] Multiple appliances / expansion modules
+- [ ] Submit brand assets to [home-assistant/brands](https://github.com/home-assistant/brands)
+
+## 🤝 Contributing
+
+Issues and PRs welcome — especially register captures from **other Dontek models**. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 Jason Brandon · Not affiliated with Dontek Electronics.

@@ -1,13 +1,15 @@
 {
   "domain": "dontek_aquatek",
-  "name": "Dontek Aquatek Pool Controller",
-  "version": "0.1.0",
-  "documentation": "https://github.com/jbyoll/dontek-aquatek-ha",
-  "issue_tracker": "https://github.com/jbyoll/dontek-aquatek-ha/issues",
-  "codeowners": ["@jbyoll"],
+  "name": "Dontek Aquatek Pool Controller (Unofficial)",
+  "codeowners": [
+    "@jbyoll"
+  ],
   "config_flow": true,
-  "iot_class": "cloud_polling",
+  "dependencies": [],
+  "documentation": "https://github.com/jbyoll/dontek-aquatek-ha",
   "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/jbyoll/dontek-aquatek-ha/issues",
   "requirements": [],
-  "dependencies": []
+  "version": "0.1.0"
 }

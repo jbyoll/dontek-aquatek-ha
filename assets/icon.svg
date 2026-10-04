@@ -1,0 +1,45 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#29b6e6"/>
+      <stop offset="1" stop-color="#0a66c2"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d9f2ff"/>
+    </linearGradient>
+    <radialGradient id="imp" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#eaf8ff"/>
+      <stop offset="1" stop-color="#9fd8f2"/>
+    </radialGradient>
+  </defs>
+
+  <!-- rounded app-icon background -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- soft wave band -->
+  <path d="M0 360 Q128 320 256 360 T512 360 V512 H0 Z" fill="#ffffff" opacity="0.10"/>
+  <path d="M0 400 Q128 364 256 400 T512 400 V512 H0 Z" fill="#ffffff" opacity="0.10"/>
+
+  <!-- water droplet -->
+  <path d="M256 92
+           C256 92 150 214 150 300
+           a106 106 0 0 0 212 0
+           C362 214 256 92 256 92 Z"
+        fill="url(#drop)"/>
+
+  <!-- pump impeller inside the droplet -->
+  <g transform="translate(256,300)">
+    <g fill="url(#imp)">
+      <g>
+        <path d="M0,-70 C22,-70 34,-48 24,-20 C14,-6 -14,-6 -24,-20 C-34,-48 -22,-70 0,-70 Z"/>
+        <path d="M0,-70 C22,-70 34,-48 24,-20 C14,-6 -14,-6 -24,-20 C-34,-48 -22,-70 0,-70 Z" transform="rotate(72)"/>
+        <path d="M0,-70 C22,-70 34,-48 24,-20 C14,-6 -14,-6 -24,-20 C-34,-48 -22,-70 0,-70 Z" transform="rotate(144)"/>
+        <path d="M0,-70 C22,-70 34,-48 24,-20 C14,-6 -14,-6 -24,-20 C-34,-48 -22,-70 0,-70 Z" transform="rotate(216)"/>
+        <path d="M0,-70 C22,-70 34,-48 24,-20 C14,-6 -14,-6 -24,-20 C-34,-48 -22,-70 0,-70 Z" transform="rotate(288)"/>
+      </g>
+    </g>
+    <circle r="22" fill="#0a66c2"/>
+    <circle r="9" fill="#eaf8ff"/>
+  </g>
+</svg>

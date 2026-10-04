@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Dontek Aquatek Pool Controller",
+        "title": "Dontek Aquatek Pool Controller (Unofficial)",
         "description": "Enter the serial number printed on the controller label (the long number under the QR code), or the device MAC address.",
         "data": {
           "serial": "Serial number or MAC",
