@@ -68,6 +68,9 @@
       },
       "speed_4_pct": {
         "name": "Speed 4 power"
+      },
+      "run_once_minutes": {
+        "name": "Run once minutes"
       }
     },
     "switch": {
@@ -108,6 +111,11 @@
       },
       "filter4_to": {
         "name": "Filter 4 end"
+      }
+    },
+    "button": {
+      "run_once": {
+        "name": "Run once"
       }
     }
   }

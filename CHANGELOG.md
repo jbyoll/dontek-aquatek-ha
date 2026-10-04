@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-10-05
+
+### Added
+- **Run Once** — a one-shot "run the pump now for N minutes":
+  - `button` **Run once** — starts the run immediately.
+  - `number` **Run once minutes** (config, 1–180, default 15) — how long it runs.
+  - Works by anchoring the run window to the controller's own clock (writes start = now,
+    end = now + minutes to registers 57650/57670, then enable = 57630).
+
 ## [0.5.2] - 2026-10-05
 
 ### Fixed

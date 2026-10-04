@@ -92,9 +92,17 @@ FILTER_TIMES = {
     4: {"from": 65471, "to": 65472, "speed": 65476},
 }
 
-# Run Once (one-shot): enable 57630 (1=on, 0xFF00=off); start/end are absolute
-# packed times the controller computes from the chosen duration. Not exposed as
-# entities yet (one-shot "run for N minutes now" maps awkwardly to HA).
+# Run Once (one-shot): write start = now, end = now + duration (both packed
+# hour*256+minute, using the controller's own clock), then enable = 1. The two
+# time registers reject invalid values but accept valid times. 0xFF00 = off.
 REG_RUNONCE_ENABLE = 57630
 REG_RUNONCE_START = 57650
 REG_RUNONCE_END = 57670
+RUNONCE_OFF = 0xFF00  # 65280
+
+# Controller real-time clock (used to anchor the Run Once window to "now").
+REG_CLOCK_HOUR = 65299
+REG_CLOCK_MIN = 65300
+
+# Default Run Once duration if the duration number hasn't been set.
+RUNONCE_DEFAULT_MIN = 15

@@ -128,12 +128,15 @@ serial / QR code private.** This integration only communicates with the controll
 ## 🗺️ Roadmap
 
 - [x] Map all four filter-time schedules (done in v0.4.0)
+- [x] Filter Pump (Socket 1) control (done in v0.5.0)
+- [x] Brand icons — shipped in the integration's `brand/` folder, served via Home
+  Assistant's local brand proxy (home-assistant/brands no longer accepts custom
+  integrations as of HA 2026.3)
 - [ ] Map remaining registers (flow, live RPM/power readback)
 - [ ] `number` entities for the per-speed RPM setpoints
-- [ ] Expose Run Once as a one-shot action/button
+- [x] Expose Run Once as a one-shot action/button (done in v0.6.0)
 - [ ] Chlorinator / heater / lighting support on units that have them
 - [ ] Multiple appliances / expansion modules
-- [ ] Submit brand assets to [home-assistant/brands](https://github.com/home-assistant/brands)
 
 ## 🤝 Contributing
 
