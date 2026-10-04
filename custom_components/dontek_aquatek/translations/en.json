@@ -27,13 +27,21 @@
     },
     "select": {
       "pump_mode": { "name": "Pump mode" },
-      "pump_speed_select": { "name": "Pump speed" }
+      "pump_speed_select": { "name": "Pump speed" },
+      "filter1_speed": { "name": "Filter 1 speed" }
     },
     "number": {
       "speed_1_pct": { "name": "Speed 1 power" },
       "speed_2_pct": { "name": "Speed 2 power" },
       "speed_3_pct": { "name": "Speed 3 power" },
       "speed_4_pct": { "name": "Speed 4 power" }
+    },
+    "switch": {
+      "filter1_enabled": { "name": "Filter 1 enabled" }
+    },
+    "time": {
+      "filter1_from": { "name": "Filter 1 start" },
+      "filter1_to": { "name": "Filter 1 end" }
     }
   }
 }

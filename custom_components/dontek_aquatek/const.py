@@ -34,6 +34,27 @@ REG_SPEED_PCT = {1: 65478, 2: 65479, 3: 65480, 4: 65481}
 
 # Live run-state word: high byte = state, low byte = running speed index (0-3).
 REG_RUN_STATE = 92
+
+# Filter Time 1 schedule (in Auto mode the pump follows this, not the set speed).
+# Times are packed as hour * 256 + minute.
+REG_FT1_ENABLE = 65318
+REG_FT1_FROM = 65319
+REG_FT1_TO = 65320
+REG_FT1_SPEED = 65473  # 0-based (0-3 -> Speed 1-4)
+
+
+def reg_to_hm(value: int) -> tuple[int, int]:
+    """Decode a packed time register into (hour, minute)."""
+    hour = (value >> 8) & 0xFF
+    minute = value & 0xFF
+    if hour > 23 or minute > 59:
+        return 0, 0
+    return hour, minute
+
+
+def hm_to_reg(hour: int, minute: int) -> int:
+    """Encode (hour, minute) into a packed time register value."""
+    return (int(hour) << 8) | (int(minute) & 0xFF)
 RUN_STATE = {
     2: "Powering up",
     3: "Powering up",

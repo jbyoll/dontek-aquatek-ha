@@ -9,6 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     DOMAIN,
     MODE_TO_STR,
+    REG_FT1_SPEED,
     REG_PUMP_MODE,
     REG_PUMP_SPEED,
     SPEED_COUNT,
@@ -23,7 +24,11 @@ async def async_setup_entry(
 ) -> None:
     coordinator: DontekCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
-        [PumpModeSelect(coordinator), PumpSpeedSelect(coordinator)]
+        [
+            PumpModeSelect(coordinator),
+            PumpSpeedSelect(coordinator),
+            FilterTimeSpeedSelect(coordinator),
+        ]
     )
 
 
@@ -74,3 +79,28 @@ class PumpSpeedSelect(DontekEntity, SelectEntity):
         except ValueError:
             return
         await self.coordinator.async_write_register(REG_PUMP_SPEED, speed - 1)
+
+
+class FilterTimeSpeedSelect(DontekEntity, SelectEntity):
+    """Speed used by Filter Time 1 (register 65473, zero-based)."""
+
+    _attr_translation_key = "filter1_speed"
+    _attr_options = [str(i) for i in range(1, SPEED_COUNT + 1)]
+
+    def __init__(self, coordinator: DontekCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.mac}_filter1_speed"
+
+    @property
+    def current_option(self) -> str | None:
+        raw = self.reg(REG_FT1_SPEED)
+        if raw is None:
+            return None
+        return str(raw + 1)
+
+    async def async_select_option(self, option: str) -> None:
+        try:
+            speed = int(option)
+        except ValueError:
+            return
+        await self.coordinator.async_write_register(REG_FT1_SPEED, speed - 1)
