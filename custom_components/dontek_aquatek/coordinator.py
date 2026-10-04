@@ -10,7 +10,17 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    REG_CLOCK_HOUR,
+    REG_CLOCK_MIN,
+    REG_RUNONCE_ENABLE,
+    REG_RUNONCE_END,
+    REG_RUNONCE_START,
+    RUNONCE_DEFAULT_MIN,
+    hm_to_reg,
+)
 from .dontek_client import DontekClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,6 +39,8 @@ class DontekCoordinator(DataUpdateCoordinator[dict[int, int]]):
         self.entry = entry
         self.mac = mac
         self.client = DontekClient(mac)
+        # HA-side Run Once duration (minutes); the number entity persists it.
+        self.run_once_minutes = RUNONCE_DEFAULT_MIN
 
     async def async_connect(self) -> None:
         """Open the MQTT session (runs the blocking client in the executor)."""
@@ -92,4 +104,27 @@ class DontekCoordinator(DataUpdateCoordinator[dict[int, int]]):
 
     async def async_write_register(self, reg: int, value: int) -> None:
         await self.hass.async_add_executor_job(self.client.write_register, reg, value)
+        await self.async_request_refresh()
+
+    async def async_run_once(self, minutes: int) -> None:
+        """Start a one-shot run for ``minutes`` from the controller's current time."""
+        minutes = max(1, int(minutes))
+
+        def _trigger() -> None:
+            regs = self.client.registers
+            hour = int(regs.get(REG_CLOCK_HOUR, 0))
+            minute = int(regs.get(REG_CLOCK_MIN, 0))
+            start = hm_to_reg(hour, minute)
+            total = hour * 60 + minute + minutes
+            end = hm_to_reg((total // 60) % 24, total % 60)
+            # the controller drops writes sent too fast; space them out
+            for reg, val in (
+                (REG_RUNONCE_START, start),
+                (REG_RUNONCE_END, end),
+                (REG_RUNONCE_ENABLE, 1),
+            ):
+                self.client.write_register(reg, val)
+                time.sleep(1.8)
+
+        await self.hass.async_add_executor_job(_trigger)
         await self.async_request_refresh()
