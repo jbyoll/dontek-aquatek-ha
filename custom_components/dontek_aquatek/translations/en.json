@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Dontek Aquatek Pool Controller",
+        "description": "Enter the serial number printed on the controller label (the long number under the QR code), or the device MAC address.",
+        "data": {
+          "serial": "Serial number or MAC",
+          "name": "Name"
+        }
+      }
+    },
+    "error": {
+      "invalid_serial": "That doesn't look like a valid serial number or MAC address.",
+      "cannot_connect": "Could not reach the controller through the Dontek cloud. Check the serial number and that the controller is online."
+    },
+    "abort": {
+      "already_configured": "This controller is already set up."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "water_temperature": { "name": "Water temperature" },
+      "pump_status": { "name": "Pump status" },
+      "pump_speed": { "name": "Pump speed" }
+    },
+    "select": {
+      "pump_mode": { "name": "Pump mode" },
+      "pump_speed_select": { "name": "Pump speed set" }
+    }
+  }
+}
