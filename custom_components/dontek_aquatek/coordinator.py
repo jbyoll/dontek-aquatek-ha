@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
@@ -30,7 +31,14 @@ class DontekCoordinator(DataUpdateCoordinator[dict[int, int]]):
 
     async def async_connect(self) -> None:
         """Open the MQTT session (runs the blocking client in the executor)."""
-        await self.hass.async_add_executor_job(self.client.connect)
+        def _connect() -> None:
+            self.client.connect()
+            for _ in range(20):
+                if self.client.connected:
+                    break
+                time.sleep(0.5)
+
+        await self.hass.async_add_executor_job(_connect)
 
     async def async_shutdown(self) -> None:
         await self.hass.async_add_executor_job(self.client.disconnect)
@@ -40,7 +48,17 @@ class DontekCoordinator(DataUpdateCoordinator[dict[int, int]]):
         def _refresh() -> dict[int, int]:
             if not self.client.connected:
                 self.client.connect()
+                # give the broker a moment to establish + subscribe
+                for _ in range(20):
+                    if self.client.connected:
+                        break
+                    time.sleep(0.5)
             self.client.request_all()
+            # wait for the controller's status reply to populate registers
+            for _ in range(20):
+                if self.client.registers:
+                    break
+                time.sleep(0.5)
             return self.client.registers
 
         try:

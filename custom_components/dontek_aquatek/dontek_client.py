@@ -160,6 +160,15 @@ class DontekClient:
     # -- connection -------------------------------------------------------
     def connect(self) -> None:
         with self._lock:
+            # tear down any previous session so we never orphan a connection
+            if self._client is not None:
+                try:
+                    self._client.loop_stop()
+                    self._client.disconnect()
+                except Exception:  # noqa: BLE001
+                    pass
+                self._client = None
+                self.connected = False
             self._creds = get_guest_credentials()
             self._creds_at = time.time()
             path = build_signed_ws_path(self._creds)
