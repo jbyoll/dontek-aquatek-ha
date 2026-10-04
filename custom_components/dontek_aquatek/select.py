@@ -8,8 +8,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     DOMAIN,
+    FILTER_TIMES,
     MODE_TO_STR,
-    REG_FT1_SPEED,
     REG_PUMP_MODE,
     REG_PUMP_SPEED,
     SPEED_COUNT,
@@ -23,13 +23,13 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: DontekCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [
-            PumpModeSelect(coordinator),
-            PumpSpeedSelect(coordinator),
-            FilterTimeSpeedSelect(coordinator),
-        ]
-    )
+    entities: list[DontekEntity] = [
+        PumpModeSelect(coordinator),
+        PumpSpeedSelect(coordinator),
+    ]
+    for ft, regs in FILTER_TIMES.items():
+        entities.append(FilterTimeSpeedSelect(coordinator, ft, regs["speed"]))
+    async_add_entities(entities)
 
 
 class PumpModeSelect(DontekEntity, SelectEntity):
@@ -82,18 +82,19 @@ class PumpSpeedSelect(DontekEntity, SelectEntity):
 
 
 class FilterTimeSpeedSelect(DontekEntity, SelectEntity):
-    """Speed used by Filter Time 1 (register 65473, zero-based)."""
+    """Speed used by a Filter Time schedule (zero-based register, 0-3 -> Speed 1-4)."""
 
-    _attr_translation_key = "filter1_speed"
     _attr_options = [str(i) for i in range(1, SPEED_COUNT + 1)]
 
-    def __init__(self, coordinator: DontekCoordinator) -> None:
+    def __init__(self, coordinator: DontekCoordinator, ft: int, reg: int) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{coordinator.mac}_filter1_speed"
+        self._reg = reg
+        self._attr_translation_key = f"filter{ft}_speed"
+        self._attr_unique_id = f"{coordinator.mac}_filter{ft}_speed"
 
     @property
     def current_option(self) -> str | None:
-        raw = self.reg(REG_FT1_SPEED)
+        raw = self.reg(self._reg)
         if raw is None:
             return None
         return str(raw + 1)
@@ -103,4 +104,4 @@ class FilterTimeSpeedSelect(DontekEntity, SelectEntity):
             speed = int(option)
         except ValueError:
             return
-        await self.coordinator.async_write_register(REG_FT1_SPEED, speed - 1)
+        await self.coordinator.async_write_register(self._reg, speed - 1)

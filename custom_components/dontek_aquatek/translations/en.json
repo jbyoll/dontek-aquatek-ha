@@ -20,28 +20,92 @@
   },
   "entity": {
     "sensor": {
-      "water_temperature": { "name": "Water temperature" },
-      "pump_status": { "name": "Pump mode status" },
-      "pump_activity": { "name": "Pump activity" },
-      "running_speed": { "name": "Running speed" }
+      "water_temperature": {
+        "name": "Water temperature"
+      },
+      "pump_status": {
+        "name": "Pump mode status"
+      },
+      "pump_activity": {
+        "name": "Pump activity"
+      },
+      "running_speed": {
+        "name": "Running speed"
+      }
     },
     "select": {
-      "pump_mode": { "name": "Pump mode" },
-      "pump_speed_select": { "name": "Pump speed" },
-      "filter1_speed": { "name": "Filter 1 speed" }
+      "pump_mode": {
+        "name": "Pump mode"
+      },
+      "pump_speed_select": {
+        "name": "Pump speed"
+      },
+      "filter1_speed": {
+        "name": "Filter 1 speed"
+      },
+      "filter2_speed": {
+        "name": "Filter 2 speed"
+      },
+      "filter3_speed": {
+        "name": "Filter 3 speed"
+      },
+      "filter4_speed": {
+        "name": "Filter 4 speed"
+      }
     },
     "number": {
-      "speed_1_pct": { "name": "Speed 1 power" },
-      "speed_2_pct": { "name": "Speed 2 power" },
-      "speed_3_pct": { "name": "Speed 3 power" },
-      "speed_4_pct": { "name": "Speed 4 power" }
+      "speed_1_pct": {
+        "name": "Speed 1 power"
+      },
+      "speed_2_pct": {
+        "name": "Speed 2 power"
+      },
+      "speed_3_pct": {
+        "name": "Speed 3 power"
+      },
+      "speed_4_pct": {
+        "name": "Speed 4 power"
+      }
     },
     "switch": {
-      "filter1_enabled": { "name": "Filter 1 enabled" }
+      "filter1_enabled": {
+        "name": "Filter 1 enabled"
+      },
+      "filter2_enabled": {
+        "name": "Filter 2 enabled"
+      },
+      "filter3_enabled": {
+        "name": "Filter 3 enabled"
+      },
+      "filter4_enabled": {
+        "name": "Filter 4 enabled"
+      }
     },
     "time": {
-      "filter1_from": { "name": "Filter 1 start" },
-      "filter1_to": { "name": "Filter 1 end" }
+      "filter1_from": {
+        "name": "Filter 1 start"
+      },
+      "filter1_to": {
+        "name": "Filter 1 end"
+      },
+      "filter2_from": {
+        "name": "Filter 2 start"
+      },
+      "filter2_to": {
+        "name": "Filter 2 end"
+      },
+      "filter3_from": {
+        "name": "Filter 3 start"
+      },
+      "filter3_to": {
+        "name": "Filter 3 end"
+      },
+      "filter4_from": {
+        "name": "Filter 4 start"
+      },
+      "filter4_to": {
+        "name": "Filter 4 end"
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-"""Time entities for Dontek Aquatek (schedule start/end)."""
+"""Time entities for Dontek Aquatek (Filter Time start/end for all schedules)."""
 from __future__ import annotations
 
 from datetime import time as dt_time
@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, REG_FT1_FROM, REG_FT1_TO, hm_to_reg, reg_to_hm
+from .const import DOMAIN, FILTER_TIMES, hm_to_reg, reg_to_hm
 from .coordinator import DontekCoordinator
 from .entity import DontekEntity
 
@@ -17,16 +17,15 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: DontekCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [
-            FilterTimeField(coordinator, "filter1_from", REG_FT1_FROM),
-            FilterTimeField(coordinator, "filter1_to", REG_FT1_TO),
-        ]
-    )
+    entities: list[FilterTimeField] = []
+    for ft, regs in FILTER_TIMES.items():
+        entities.append(FilterTimeField(coordinator, f"filter{ft}_from", regs["from"]))
+        entities.append(FilterTimeField(coordinator, f"filter{ft}_to", regs["to"]))
+    async_add_entities(entities)
 
 
 class FilterTimeField(DontekEntity, TimeEntity):
-    """A single start/end time of Filter Time 1 (packed hour*256 + minute)."""
+    """A single start/end time of a Filter Time (packed hour*256 + minute)."""
 
     def __init__(self, coordinator: DontekCoordinator, key: str, reg: int) -> None:
         super().__init__(coordinator)
