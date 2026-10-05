@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-06
+
+### Added
+- **Heater** support (mapped live from the app's writes; only created on units that
+  report the heater registers):
+  - `climate` **Heater** — Off / Heat (register 65348; the app has no heater Auto),
+    target temperature in 0.5 °C steps (65447, encoded as °C × 2, clamped to 10–40 °C),
+    current temperature from the water sensor, heating/idle from 172.
+  - `switch` **Run til heated** (65500, config) — setting that makes the heater stop once
+    the setpoint is reached rather than staying in heat mode.
+- `switch` **Water feature** (Socket, register 65345) — often drives a valve or jets.
+- `tools/dontek_capture.py` — register capture tool for contributors: watches the app's
+  writes, diffs full dumps around typed markers, writes a raw `.jsonl` log plus a
+  Markdown summary ready to attach to an issue.
+
+### Fixed
+- Removed `REG_SPEED_RPM`, which wrongly pointed at the Filter Time 1/2 start/end
+  registers (65319–65322).
+
 ## [0.6.0] - 2026-10-05
 
 ### Added

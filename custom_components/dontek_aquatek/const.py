@@ -33,8 +33,8 @@ FP_STR_TO_MODE = {v: k for k, v in FP_MODE_TO_STR.items()}
 REG_PUMP_SPEED = 65463
 SPEED_COUNT = 4
 
-# RPM setpoints for speeds 1..4.
-REG_SPEED_RPM = {1: 65319, 2: 65320, 3: 65321, 4: 65322}
+# NOTE: the per-speed RPM setpoint registers are not mapped yet. (65319-65322,
+# previously listed here as REG_SPEED_RPM, are the Filter Time 1/2 from/to times.)
 
 # Per-speed power as a percentage (what the app's Pump Setup screen edits).
 REG_SPEED_PCT = {1: 65478, 2: 65479, 3: 65480, 4: 65481}
@@ -106,3 +106,19 @@ REG_CLOCK_MIN = 65300
 
 # Default Run Once duration if the duration number hasn't been set.
 RUNONCE_DEFAULT_MIN = 15
+
+# --- Heater (mapped live 2026-10-06 by watching the app's writes) ---
+# Heater socket on/off - the app offers only On/Off for the heater (no Auto).
+REG_HEATER_ON = 65348
+# Setpoint in half-degrees: value = degrees C * 2 (76 = 38.0 C, 80 = 40.0 C).
+REG_HEATER_SETPOINT = 65447
+HEATER_MIN_TEMP = 10.0
+HEATER_MAX_TEMP = 40.0
+# "Run til heated" setting (0/1): heater stops once the setpoint is reached
+# instead of staying in heat mode. Writing it doesn't start/stop the heater.
+REG_HEATER_RUN_TIL_HEATED = 65500
+# Live heater status: 1 while the controller is calling for heat.
+REG_HEATER_ACTIVE = 172
+
+# Water Feature socket on/off (0/1). Often drives a valve/jets (e.g. spa jets).
+REG_WATER_FEATURE = 65345
