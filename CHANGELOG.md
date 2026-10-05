@@ -8,7 +8,8 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 - **Heater** support (mapped live from the app's writes; only created on units that
-  report the heater registers):
+  report the heater registers). Tested with a Waterco Electroheat MKV 9 kW heat pump on a
+  Pooltek controller:
   - `climate` **Heater** — Off / Heat (register 65348; the app has no heater Auto),
     target temperature in 0.5 °C steps (65447, encoded as °C × 2, clamped to 10–40 °C),
     current temperature from the water sensor, heating/idle from 172.
