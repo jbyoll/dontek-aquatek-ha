@@ -4,3 +4,7 @@ __pycache__/
 .venv/
 venv/
 *.log
+
+# register captures (may contain your MAC)
+*.jsonl
+captures/
