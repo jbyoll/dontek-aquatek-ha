@@ -7,9 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [0.7.0] - 2026-10-06
 
 ### Added
-- **Heater** support (mapped live from the app's writes; only created on units that
-  report the heater registers). Tested with a Waterco Electroheat MKV 9 kW heat pump on a
-  Pooltek controller:
+- **Heater** support (mapped live from the app's writes). Tested with a Waterco
+  Electroheat MKV 9 kW heat pump on a Pooltek controller. The heater and water feature
+  entities are **disabled by default** - enable them on the device page if your controller
+  has that hardware. (Controllers report these registers even with nothing wired, so the
+  integration cannot tell on its own.)
   - `climate` **Heater** — Off / Heat (register 65348; the app has no heater Auto),
     target temperature in 0.5 °C steps (65447, encoded as °C × 2, clamped to 10–40 °C),
     current temperature from the water sensor, heating/idle from 172.
@@ -21,6 +23,8 @@ All notable changes to this project are documented here. The format is based on
   Markdown summary ready to attach to an issue.
 
 ### Fixed
+- The first register read now waits for the controller's multi-part reply to finish, so
+  entity setup never sees a partial table.
 - Removed `REG_SPEED_RPM`, which wrongly pointed at the Filter Time 1/2 start/end
   registers (65319–65322).
 

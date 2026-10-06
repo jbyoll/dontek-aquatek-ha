@@ -31,7 +31,9 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: DontekCoordinator = hass.data[DOMAIN][entry.entry_id]
-    # only units that report heater registers get a thermostat
+    # A controller with no heater has been seen reporting the heater registers, so
+    # their presence does not prove a heater is fitted: the entity is
+    # created disabled and the owner enables it (see HeaterClimate).
     regs = coordinator.data or {}
     if REG_HEATER_ON in regs and REG_HEATER_SETPOINT in regs:
         async_add_entities([HeaterClimate(coordinator)])
@@ -41,6 +43,9 @@ class HeaterClimate(DontekEntity, ClimateEntity):
     """Heater on/off (65348) with setpoint in half-degrees (65447)."""
 
     _attr_translation_key = "heater"
+    # off until the owner enables it: units without a heater report the same
+    # registers, and switching the heater socket also changes the pump speed
+    _attr_entity_registry_enabled_default = False
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT]
     # TURN_ON/TURN_OFF only exist from HA 2024.2; hacs.json still allows 2024.1
     _attr_supported_features = (
@@ -72,7 +77,8 @@ class HeaterClimate(DontekEntity, ClimateEntity):
         active = self.reg(REG_HEATER_ACTIVE)
         if active is None:
             return None
-        return HVACAction.HEATING if active else HVACAction.IDLE
+        # 1 = calling for heat. A unit with no heater has been seen reporting 2 here.
+        return HVACAction.HEATING if active == 1 else HVACAction.IDLE
 
     @property
     def current_temperature(self) -> float | None:

@@ -45,9 +45,9 @@ same hardware with different labels.
 | ⏱️ | **Filter 1–4 start / end** | `time` — each schedule window (all four filter times) |
 | 🔁 | **Filter 1–4 enabled** | `switch` — turn each schedule on/off |
 | 🏊 | **Filter 1–4 speed** | `select` — speed used by each schedule |
-| 🔥 | **Heater** | `climate` — Off / Heat, target temperature (0.5 °C steps), heating/idle *(units with a heater)* |
-| ♨️ | **Run til heated** | `switch` (config) — setting: heater switches off once the setpoint is reached instead of staying on *(units with a heater)* |
-| ⛲ | **Water feature** | `switch` — water feature socket on/off (e.g. spa jets / valve) |
+| 🔥 | **Heater** | `climate` — Off / Heat, target temperature (0.5 °C steps), heating/idle *(disabled by default; enable it if you have a heater)* |
+| ♨️ | **Run til heated** | `switch` (config) — setting: heater switches off once the setpoint is reached instead of staying on *(disabled by default)* |
+| ⛲ | **Water feature** | `switch` — water feature socket on/off (e.g. spa jets / valve) *(disabled by default)* |
 
 > In **Auto** mode the pump follows its filter schedule, so the live **Running speed** can
 > differ from the **Pump speed** you set — just like the official app's status screen.
@@ -110,7 +110,7 @@ control goes through Dontek's AWS cloud:
 | Heater on/off | `65348` | `0` = Off · `1` = On (no Auto in the app) |
 | Heater setpoint | `65447` | °C × 2 (`80` = 40.0 °C) |
 | Run til heated (setting) | `65500` | `0` / `1` |
-| Heater active (calling for heat) | `172` | `0` / `1` |
+| Heater active (calling for heat) | `172` | `0` / `1` (`2` seen on a unit with no heater) |
 | Water feature (socket) | `65345` | `0` = Off · `1` = On |
 | Run Once (one-shot) | enable `57630` · start `57650` · end `57670` | mapped, not yet exposed as entities |
 
