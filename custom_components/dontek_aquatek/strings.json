@@ -85,6 +85,12 @@
       },
       "filter4_enabled": {
         "name": "Filter 4 enabled"
+      },
+      "run_til_heated": {
+        "name": "Run til heated"
+      },
+      "water_feature": {
+        "name": "Water feature"
       }
     },
     "time": {
@@ -116,6 +122,11 @@
     "button": {
       "run_once": {
         "name": "Run once"
+      }
+    },
+    "climate": {
+      "heater": {
+        "name": "Heater"
       }
     }
   }

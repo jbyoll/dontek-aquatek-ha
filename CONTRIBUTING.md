@@ -15,6 +15,20 @@ The protocol is **Modbus-over-MQTT** on these topics (lower-case MAC, no colons)
 - subscribe to `dontek<mac>/status/psw`
 - message shape: `{"messageId":"read"|"write","modbusReg":<reg>,"modbusVal":[<u16>...]}`
 
+The easiest way is the capture tool (needs only `pip install paho-mqtt`):
+
+```
+python tools/dontek_capture.py --serial <your serial> --out mycapture --redact     --model "Aquatek" --features "heater, VS pump"
+```
+
+Wait for the green **ready** line, then type a short note + Enter before each thing you
+press in the app. Ctrl+C writes `mycapture.jsonl` (raw log) and `mycapture.md` (summary of
+the app's writes and register changes) — attach both. Full usage notes are in
+[tools/README.md](tools/README.md). Some appliances also have their own
+app and Wi-Fi module (e.g. Waterco heat pumps with **WatercoConnect**) on a separate
+cloud; changes made there never reach the controller, so make changes in the controller's
+own app (Aquatek / Theralux / **Pooltek**) while capturing.
+
 When opening an issue with a capture, please include:
 
 - your controller model / brand and what features it has,

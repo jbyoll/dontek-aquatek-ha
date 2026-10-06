@@ -45,6 +45,9 @@ same hardware with different labels.
 | ⏱️ | **Filter 1–4 start / end** | `time` — each schedule window (all four filter times) |
 | 🔁 | **Filter 1–4 enabled** | `switch` — turn each schedule on/off |
 | 🏊 | **Filter 1–4 speed** | `select` — speed used by each schedule |
+| 🔥 | **Heater** | `climate` — Off / Heat, target temperature (0.5 °C steps), heating/idle *(disabled by default; enable it if you have a heater)* |
+| ♨️ | **Run til heated** | `switch` (config) — setting: heater switches off once the setpoint is reached instead of staying on *(disabled by default)* |
+| ⛲ | **Water feature** | `switch` — water feature socket on/off (e.g. spa jets / valve) *(disabled by default)* |
 
 > In **Auto** mode the pump follows its filter schedule, so the live **Running speed** can
 > differ from the **Pump speed** you set — just like the official app's status screen.
@@ -104,6 +107,11 @@ control goes through Dontek's AWS cloud:
 | Filter Time enable mask | `65318` | **bitmask** — bit 0 = FT1 … bit 3 = FT4 (`1` = FT1 only, `15` = all four) |
 | Filter Time start / end | FT1 `65319`/`65320` · FT2 `65321`/`65322` · FT3 `65469`/`65470` · FT4 `65471`/`65472` | hour × 256 + minute (08:00 = 2048) |
 | Filter Time speed | FT1 `65473` · FT2 `65474` · FT3 `65475` · FT4 `65476` | 0–3 → Speed 1–4 |
+| Heater on/off | `65348` | `0` = Off · `1` = On (no Auto in the app) |
+| Heater setpoint | `65447` | °C × 2 (`80` = 40.0 °C) |
+| Run til heated (setting) | `65500` | `0` / `1` |
+| Heater active (calling for heat) | `172` | `0` / `1` (`2` seen on a unit with no heater) |
+| Water feature (socket) | `65345` | `0` = Off · `1` = On |
 | Run Once (one-shot) | enable `57630` · start `57650` · end `57670` | mapped, not yet exposed as entities |
 
 ## 🔧 Troubleshooting
@@ -135,7 +143,8 @@ serial / QR code private.** This integration only communicates with the controll
 - [ ] Map remaining registers (flow, live RPM/power readback)
 - [ ] `number` entities for the per-speed RPM setpoints
 - [x] Expose Run Once as a one-shot action/button (done in v0.6.0)
-- [ ] Chlorinator / heater / lighting support on units that have them
+- [x] Heater (on/off + setpoint), Run til heated, Water feature (done in v0.7.0)
+- [ ] Chlorinator / lighting support on units that have them
 - [ ] Multiple appliances / expansion modules
 
 ## 🤝 Contributing
