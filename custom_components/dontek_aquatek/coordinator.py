@@ -74,6 +74,15 @@ class DontekCoordinator(DataUpdateCoordinator[dict[int, int]]):
                 if time.monotonic() >= deadline:
                     return False
                 time.sleep(0.5)
+            # The controller answers one read-all in several messages (seen: two,
+            # ~0.3 s apart). Wait until they stop arriving so the table we return
+            # is complete - entity setup reads it once, on the first refresh.
+            settle_deadline = time.monotonic() + 3.0
+            while (
+                time.monotonic() - self.client.last_update < 1.0
+                and time.monotonic() < settle_deadline
+            ):
+                time.sleep(0.2)
             return True
 
         def _refresh() -> dict[int, int]:

@@ -28,7 +28,8 @@ async def async_setup_entry(
         FilterTimeEnableSwitch(coordinator, ft)
         for ft in range(1, FILTER_TIME_COUNT + 1)
     ]
-    # optional features: only create them if the unit reports the register
+    # optional features: created disabled (see RegisterSwitch), because units
+    # without the hardware report these registers too
     regs = coordinator.data or {}
     for reg, key, category in (
         # a setting, not a control: heater stops once at temperature
@@ -72,6 +73,9 @@ class FilterTimeEnableSwitch(DontekEntity, SwitchEntity):
 
 class RegisterSwitch(DontekEntity, SwitchEntity):
     """A plain 0/1 register (Run til heated 65500, Water Feature 65345)."""
+
+    # optional hardware: off until the owner enables it
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,
