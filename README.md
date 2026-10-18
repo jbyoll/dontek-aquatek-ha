@@ -49,6 +49,7 @@ same hardware with different labels.
 | ♨️ | **Run til heated** | `switch` (config) — setting: heater switches off once the setpoint is reached instead of staying on *(disabled by default)* |
 | 🔌 | **Socket 2–5** | `select` — Off / On / Auto for each socket, named after the socket's name in the app or its appliance type (e.g. *Socket 2 Robot*). Sockets set to *Always On* show On but can't be switched (same as the app); sockets set to *None* are unavailable |
 | 🛠️ | **Socket 1–5 type** / **name** | `select` / `text` (config) — change a socket's appliance type and its 16-character name, the same settings as the app's Appliance Setup. ⚠️ Changing a socket's type turns it Off |
+| 🟢 | **Socket 1–5 running** | `binary_sensor` — whether each socket is energised right now. Unavailable when no appliance is assigned. For a variable-speed pump this is the relay feeding the pump, so it can read *running* while the pump itself is idle |
 | 🛁 | **Pool / Spa mode** | `select` — switch between pool and spa. Enabled by default on an Aquatek with **Spa Enabled** turned on in the app's Spa Setup; otherwise created disabled |
 | 🌞 | **Roof temperature** / **Solar pump** | `sensor` / `binary_sensor` — roof sensor and solar pump flag *(Oasis only, disabled by default)* |
 | ⛲ | **Water feature** | `switch` — water feature socket on/off (e.g. spa jets / valve) *(disabled by default)* |
@@ -107,6 +108,7 @@ control goes through Dontek's AWS cloud:
 | Socket 1–5 mode | `65336`–`65340` | `0` = Off · `1` = On · `2` = Auto (`65336` = Socket 1 / Filter pump) |
 | Socket 1–5 appliance type | `65323`–`65327` | index into the app's list: `0` None · `1` Sanitiser · `2` Filter Pump · `3` Cleaning Pump · `4` Blower · `5` Pool Light · `6` Spa Light · `7` Garden Light · `8` Water Feature · `9` Solar · `10` Other · `11` Always On · `12` Jet Pump · `13` Heating Pump (ind.) · `14` UV Sanitiser |
 | Socket 1–5 name | 8 registers each from `57344` (Socket n = `57344 + 8 × (n − 1)`) | ASCII, 2 characters per register, max 16. The app writes all 8 in one message, zero padded; empty = all `0` |
+| Socket 1–5 running (live) | `160`–`164` | `0` = off · `1` = running · `2` = no appliance assigned |
 | Valve 1–4 type | `65328`–`65331` | `0` = None (modes not mapped yet) |
 | Pool / Spa mode | `65313` | `0` = Pool · `1` = Spa |
 | Spa enabled (Spa Setup) | `65482` | `0` / `1` |

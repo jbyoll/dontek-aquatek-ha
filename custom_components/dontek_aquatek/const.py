@@ -161,6 +161,17 @@ def socket_label(regs: dict[int, int], socket: int) -> str:
     return f"Socket {socket} {label}" if label else f"Socket {socket}"
 
 
+# Live per-socket flag: 160 + (n - 1). 0 = off, 1 = running, 2 = no appliance
+# assigned. Seen on Aquatek, Theralink and Oasis dumps (Oasis "solar pump" 162
+# is socket 3's flag; an Oasis in-floor pump on socket 6 sets 165).
+REG_SOCKET_RUNNING_BASE = 160
+SOCKET_RUNNING_UNASSIGNED = 2
+
+
+def socket_running_reg(socket: int) -> int:
+    return REG_SOCKET_RUNNING_BASE + socket - 1
+
+
 # Valve 1-4 type (0 = None). Valve modes aren't mapped yet: no test unit has a
 # valve assigned.
 REG_VALVE_TYPE_BASE = 65328

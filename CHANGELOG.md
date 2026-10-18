@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Socket 1–5 running** binary sensors (registers 160–164: 0 = off, 1 = running,
+  2 = no appliance assigned, shown as unavailable). Named like the socket's mode select.
+  The same flags show up on Aquatek, Theralink and Oasis dumps (#15).
+
 ## [0.10.0] - 2026-10-18
 
 ### Added
