@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -19,12 +21,14 @@ from .const import (
     REG_PUMP_SPEED,
     REG_SPA_ENABLED,
     SOCKET_COUNT,
-    SOCKET_TYPE_ALWAYS_ON,
     SOCKET_TYPE_NONE,
+    SOCKET_TYPES,
     SPEED_COUNT,
     STR_TO_MODE,
     is_oasis,
     pump_mode_str,
+    socket_controllable,
+    socket_label,
     socket_mode_reg,
     socket_name,
     socket_type_reg,
@@ -46,13 +50,13 @@ async def async_setup_entry(
     for ft, regs in FILTER_TIMES.items():
         entities.append(FilterTimeSpeedSelect(coordinator, ft, regs["speed"]))
     regs = coordinator.data or {}
-    # Socket 1 is the Filter Pump select above. Sockets set to None or Always
-    # On have no Off/On/Auto control in the app, so they get no entity.
-    for socket in range(2, SOCKET_COUNT + 1):
-        stype = regs.get(socket_type_reg(socket))
-        if stype is None or stype in (SOCKET_TYPE_NONE, SOCKET_TYPE_ALWAYS_ON):
+    # Socket 1's mode is the Filter Pump select above.
+    for socket in range(1, SOCKET_COUNT + 1):
+        if socket_type_reg(socket) not in regs:
             continue
-        entities.append(SocketModeSelect(coordinator, socket))
+        entities.append(SocketTypeSelect(coordinator, socket))
+        if socket > 1:
+            entities.append(SocketModeSelect(coordinator, socket))
     if REG_POOL_SPA_MODE in regs:
         entities.append(PoolSpaModeSelect(coordinator))
     async_add_entities(entities)
@@ -156,7 +160,9 @@ class SocketModeSelect(DontekEntity, SelectEntity):
     """Off / On / Auto for sockets 2-5 (registers 65337-65340).
 
     Named after the socket's name in the app, or its appliance type if it has
-    no name. Reload the integration after changing Appliance Setup in the app.
+    no name, and follows renames and type changes without a reload. A socket
+    set to Always On shows On but can't be switched, as in the app; one set to
+    None is unavailable.
     """
 
     _attr_options = ["Off", "On", "Auto"]
@@ -165,12 +171,21 @@ class SocketModeSelect(DontekEntity, SelectEntity):
         super().__init__(coordinator)
         self._socket = socket
         self._reg = socket_mode_reg(socket)
-        regs = coordinator.data or {}
-        label = socket_name(regs, socket) or socket_type_str(
-            regs.get(socket_type_reg(socket))
-        )
-        self._attr_name = f"Socket {socket} {label}"
         self._attr_unique_id = f"{coordinator.mac}_socket{socket}_mode"
+        stype = (coordinator.data or {}).get(socket_type_reg(socket))
+        self._attr_entity_registry_enabled_default = stype != SOCKET_TYPE_NONE
+
+    @property
+    def _type(self) -> int | None:
+        return self.reg(socket_type_reg(self._socket))
+
+    @property
+    def name(self) -> str:
+        return socket_label(self.coordinator.data or {}, self._socket)
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._type not in (None, SOCKET_TYPE_NONE)
 
     @property
     def current_option(self) -> str | None:
@@ -180,14 +195,52 @@ class SocketModeSelect(DontekEntity, SelectEntity):
     def extra_state_attributes(self) -> dict[str, int | str | None]:
         return {
             "socket": self._socket,
-            "appliance_type": socket_type_str(self.reg(socket_type_reg(self._socket))),
+            "appliance_type": socket_type_str(self._type),
+            "appliance_name": socket_name(self.coordinator.data or {}, self._socket) or None,
         }
 
     async def async_select_option(self, option: str) -> None:
+        if not socket_controllable(self._type):
+            raise HomeAssistantError(
+                f"Socket {self._socket} is set to {socket_type_str(self._type)}; "
+                "change its type to switch it"
+            )
         value = FP_STR_TO_MODE.get(option)
         if value is None:
             return
         await self.coordinator.async_write_register(self._reg, value)
+
+
+class SocketTypeSelect(DontekEntity, SelectEntity):
+    """Appliance type of a socket, as set in the app's Appliance Setup.
+
+    Registers 65323-65327, index into SOCKET_TYPES. The controller turns the
+    socket Off when its type changes, like the app does.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_options = list(SOCKET_TYPES)
+
+    def __init__(self, coordinator: DontekCoordinator, socket: int) -> None:
+        super().__init__(coordinator)
+        self._socket = socket
+        self._reg = socket_type_reg(socket)
+        self._attr_unique_id = f"{coordinator.mac}_socket{socket}_type"
+
+    @property
+    def name(self) -> str:
+        label = socket_name(self.coordinator.data or {}, self._socket)
+        return f"Socket {self._socket} {label} type" if label else f"Socket {self._socket} type"
+
+    @property
+    def current_option(self) -> str | None:
+        option = socket_type_str(self.reg(self._reg))
+        return option if option in self._attr_options else None
+
+    async def async_select_option(self, option: str) -> None:
+        if option not in SOCKET_TYPES:
+            return
+        await self.coordinator.async_write_register(self._reg, SOCKET_TYPES.index(option))
 
 
 class PoolSpaModeSelect(DontekEntity, SelectEntity):
