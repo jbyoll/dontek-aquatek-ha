@@ -304,6 +304,17 @@ class DontekClient:
                 qos=0,
             )
 
+    def write_registers(self, reg: int, values: list[int]) -> None:
+        """Write consecutive registers in one message (as the app does for names)."""
+        reg = int(reg)
+        values = [int(v) & 0xFFFF for v in values]
+        with self.write_lock:
+            self._publish({"messageId": "write", "modbusReg": reg, "modbusVal": values})
+            for i, value in enumerate(values):
+                self.registers[reg + i] = value
+            time.sleep(0.5)
+            self.request_all()
+
     def write_register(self, reg: int, value: int) -> None:
         """Write a single 16-bit register, then re-read state."""
         reg, value = int(reg), int(value) & 0xFFFF

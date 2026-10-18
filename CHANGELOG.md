@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Socket 1–5 type** select and **Socket 1–5 name** text entities (configuration): set a
+  socket's appliance type (65323–65327) and its 16-character name (8 registers from
+  57344), the same as the app's Appliance Setup. Names are written in one message, the
+  way the app does it. Changing a socket's type turns that socket Off.
+
+### Changed
+- Socket 2–5 selects are now created for every socket, so sockets set to Always On show
+  up with their name too. Always On sockets show On and refuse changes; sockets set to
+  None are unavailable (and disabled by default). Names and types follow changes made in
+  the app or in Home Assistant without a reload.
+
 ## [0.9.0] - 2026-10-18
 
 ### Added

@@ -133,6 +133,9 @@ class DontekCoordinator(DataUpdateCoordinator[dict[int, int]]):
     async def async_write_register(self, reg: int, value: int) -> None:
         await self._async_run_write(self.client.write_register, reg, value)
 
+    async def async_write_registers(self, reg: int, values: list[int]) -> None:
+        await self._async_run_write(self.client.write_registers, reg, values)
+
     async def async_update_bits(self, reg: int, set_bits: int, clear_bits: int) -> None:
         """Set/clear bits of a register, using the newest known value.
 

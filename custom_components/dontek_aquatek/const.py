@@ -71,12 +71,14 @@ FP_STR_TO_MODE = {v: k for k, v in FP_MODE_TO_STR.items()}
 # Sockets 1-2 are on the main unit, 3-5 on Expansion 1. Each socket has a type
 # (what the app's Appliance Setup assigns to it), an Off/On/Auto mode (same
 # 0/1/2 encoding as REG_FILTER_PUMP_MODE, which is socket 1's mode) and an
-# optional 16-character name the owner can set in the app.
+# optional 16-character name the owner can set in the app. Changing a socket's
+# type resets its mode to Off (seen live).
 SOCKET_COUNT = 5
 REG_SOCKET_TYPE_BASE = 65323  # socket n type = 65323 + (n - 1)
 REG_SOCKET_MODE_BASE = 65336  # socket n mode = 65336 + (n - 1)
 REG_SOCKET_NAME_BASE = 57344  # socket n name = 8 registers from 57344 + 8 * (n - 1)
 SOCKET_NAME_REGS = 8
+SOCKET_NAME_MAX_LEN = SOCKET_NAME_REGS * 2  # app limit: 16 characters
 # Appliance types, in the app's order (index = register value).
 SOCKET_TYPES = (
     "None",
@@ -127,9 +129,36 @@ def _ascii(regs: dict[int, int], start: int, count: int) -> str:
     return "".join(chars).strip()
 
 
+def socket_name_reg(socket: int) -> int:
+    return REG_SOCKET_NAME_BASE + SOCKET_NAME_REGS * (socket - 1)
+
+
 def socket_name(regs: dict[int, int], socket: int) -> str:
     """Name the owner gave the socket in the app ("" if none)."""
-    return _ascii(regs, REG_SOCKET_NAME_BASE + SOCKET_NAME_REGS * (socket - 1), SOCKET_NAME_REGS)
+    return _ascii(regs, socket_name_reg(socket), SOCKET_NAME_REGS)
+
+
+def encode_name(name: str) -> list[int]:
+    """Pack a name into the 8 name registers, 2 characters each, zero padded.
+
+    The app writes all 8 registers in one message; an empty name is 8 zeros.
+    """
+    data = name.encode("ascii")[: SOCKET_NAME_MAX_LEN].ljust(SOCKET_NAME_MAX_LEN, b"\0")
+    return [(data[i] << 8) | data[i + 1] for i in range(0, SOCKET_NAME_MAX_LEN, 2)]
+
+
+def socket_controllable(type_value: int | None) -> bool:
+    """True for appliance types the app gives an Off / On / Auto control."""
+    return type_value is not None and type_value not in (
+        SOCKET_TYPE_NONE,
+        SOCKET_TYPE_ALWAYS_ON,
+    )
+
+
+def socket_label(regs: dict[int, int], socket: int) -> str:
+    """"Socket 3 Jets": the socket's name, or its type if it has no name."""
+    label = socket_name(regs, socket) or socket_type_str(regs.get(socket_type_reg(socket)))
+    return f"Socket {socket} {label}" if label else f"Socket {socket}"
 
 
 # Valve 1-4 type (0 = None). Valve modes aren't mapped yet: no test unit has a
