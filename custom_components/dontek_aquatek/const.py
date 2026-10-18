@@ -67,6 +67,76 @@ REG_FILTER_PUMP_MODE = 65336
 FP_MODE_TO_STR = {0: "Off", 1: "On", 2: "Auto"}
 FP_STR_TO_MODE = {v: k for k, v in FP_MODE_TO_STR.items()}
 
+# --- Sockets (mapped live 2026-10-18 on an Aquatek, fw 1.17B1 + Expansion 1) ---
+# Sockets 1-2 are on the main unit, 3-5 on Expansion 1. Each socket has a type
+# (what the app's Appliance Setup assigns to it), an Off/On/Auto mode (same
+# 0/1/2 encoding as REG_FILTER_PUMP_MODE, which is socket 1's mode) and an
+# optional 16-character name the owner can set in the app.
+SOCKET_COUNT = 5
+REG_SOCKET_TYPE_BASE = 65323  # socket n type = 65323 + (n - 1)
+REG_SOCKET_MODE_BASE = 65336  # socket n mode = 65336 + (n - 1)
+REG_SOCKET_NAME_BASE = 57344  # socket n name = 8 registers from 57344 + 8 * (n - 1)
+SOCKET_NAME_REGS = 8
+# Appliance types, in the app's order (index = register value).
+SOCKET_TYPES = (
+    "None",
+    "Sanitiser",
+    "Filter Pump",
+    "Cleaning Pump",
+    "Blower",
+    "Pool Light",
+    "Spa Light",
+    "Garden Light",
+    "Water Feature",
+    "Solar",
+    "Other",
+    "Always On",
+    "Jet Pump",
+    "Heating Pump (ind.)",
+    "UV Sanitiser",
+)
+SOCKET_TYPE_NONE = 0
+SOCKET_TYPE_ALWAYS_ON = 11
+
+
+def socket_type_reg(socket: int) -> int:
+    return REG_SOCKET_TYPE_BASE + socket - 1
+
+
+def socket_mode_reg(socket: int) -> int:
+    return REG_SOCKET_MODE_BASE + socket - 1
+
+
+def socket_type_str(value: int | None) -> str | None:
+    if value is None:
+        return None
+    if 0 <= value < len(SOCKET_TYPES):
+        return SOCKET_TYPES[value]
+    return f"Unknown ({value})"
+
+
+def _ascii(regs: dict[int, int], start: int, count: int) -> str:
+    chars = []
+    for reg in range(start, start + count):
+        val = regs.get(reg)
+        if val is None:
+            break
+        for b in (val >> 8, val & 0xFF):
+            if 32 <= b < 127:
+                chars.append(chr(b))
+    return "".join(chars).strip()
+
+
+def socket_name(regs: dict[int, int], socket: int) -> str:
+    """Name the owner gave the socket in the app ("" if none)."""
+    return _ascii(regs, REG_SOCKET_NAME_BASE + SOCKET_NAME_REGS * (socket - 1), SOCKET_NAME_REGS)
+
+
+# Valve 1-4 type (0 = None). Valve modes aren't mapped yet: no test unit has a
+# valve assigned.
+REG_VALVE_TYPE_BASE = 65328
+VALVE_COUNT = 4
+
 # Pump speed selector. Register is zero-based; displayed speed = value + 1 (4 speeds).
 REG_PUMP_SPEED = 65463
 SPEED_COUNT = 4
@@ -169,8 +239,12 @@ REG_WATER_FEATURE = 65345
 # Smart units). Used to tell Oasis controllers apart from Aquatek ones.
 REG_NAME_START = 65488
 REG_NAME_COUNT = 8
-# Pool / Spa valve actuator: 0 = Pool, 1 = Spa (registers 168/169 mirror it).
+# Pool / Spa mode: 0 = Pool, 1 = Spa (registers 168/169 mirror it on Oasis).
+# Same register on Aquatek (confirmed 2026-10-18); there the app only offers
+# Pool/Spa once Spa Setup > Spa Enabled (REG_SPA_ENABLED) is on, and switching
+# to Spa starts the pump at the spa speed.
 REG_POOL_SPA_MODE = 65313
+REG_SPA_ENABLED = 65482  # 0 / 1
 POOL_SPA_TO_STR = {0: "Pool", 1: "Spa"}
 POOL_SPA_STR_TO_MODE = {v: k for k, v in POOL_SPA_TO_STR.items()}
 # Roof / solar collector temperature in half-degrees (113 = 56.5 C); registers
@@ -182,15 +256,7 @@ REG_SOLAR_PUMP_ACTIVE = 162
 
 def decode_name(regs: dict[int, int]) -> str:
     """Controller name from the ASCII name registers ("" if not present)."""
-    chars = []
-    for reg in range(REG_NAME_START, REG_NAME_START + REG_NAME_COUNT):
-        val = regs.get(reg)
-        if val is None:
-            break
-        for b in (val >> 8, val & 0xFF):
-            if 32 <= b < 127:
-                chars.append(chr(b))
-    return "".join(chars).strip()
+    return _ascii(regs, REG_NAME_START, REG_NAME_COUNT)
 
 
 def is_oasis(regs: dict[int, int]) -> bool:

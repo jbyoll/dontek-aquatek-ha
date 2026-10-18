@@ -1,4 +1,4 @@
-"""Select entities for Dontek Aquatek (pump mode and speed)."""
+"""Select entities for Dontek Aquatek (pump, sockets, pool/spa)."""
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
@@ -17,10 +17,18 @@ from .const import (
     REG_POOL_SPA_MODE,
     REG_PUMP_MODE,
     REG_PUMP_SPEED,
+    REG_SPA_ENABLED,
+    SOCKET_COUNT,
+    SOCKET_TYPE_ALWAYS_ON,
+    SOCKET_TYPE_NONE,
     SPEED_COUNT,
     STR_TO_MODE,
     is_oasis,
     pump_mode_str,
+    socket_mode_reg,
+    socket_name,
+    socket_type_reg,
+    socket_type_str,
 )
 from .coordinator import DontekCoordinator
 from .entity import DontekEntity
@@ -37,7 +45,15 @@ async def async_setup_entry(
     ]
     for ft, regs in FILTER_TIMES.items():
         entities.append(FilterTimeSpeedSelect(coordinator, ft, regs["speed"]))
-    if is_oasis(coordinator.data or {}):
+    regs = coordinator.data or {}
+    # Socket 1 is the Filter Pump select above. Sockets set to None or Always
+    # On have no Off/On/Auto control in the app, so they get no entity.
+    for socket in range(2, SOCKET_COUNT + 1):
+        stype = regs.get(socket_type_reg(socket))
+        if stype is None or stype in (SOCKET_TYPE_NONE, SOCKET_TYPE_ALWAYS_ON):
+            continue
+        entities.append(SocketModeSelect(coordinator, socket))
+    if REG_POOL_SPA_MODE in regs:
         entities.append(PoolSpaModeSelect(coordinator))
     async_add_entities(entities)
 
@@ -136,20 +152,63 @@ class FilterTimeSpeedSelect(DontekEntity, SelectEntity):
         await self.coordinator.async_write_register(self._reg, speed - 1)
 
 
-class PoolSpaModeSelect(DontekEntity, SelectEntity):
-    """Pool / Spa valve on Oasis units (register 65313: 0 = Pool, 1 = Spa).
+class SocketModeSelect(DontekEntity, SelectEntity):
+    """Off / On / Auto for sockets 2-5 (registers 65337-65340).
 
-    Created disabled: Oasis units without a pool-spa valve report the register
-    too, and switching it moves a physical actuator.
+    Named after the socket's name in the app, or its appliance type if it has
+    no name. Reload the integration after changing Appliance Setup in the app.
+    """
+
+    _attr_options = ["Off", "On", "Auto"]
+
+    def __init__(self, coordinator: DontekCoordinator, socket: int) -> None:
+        super().__init__(coordinator)
+        self._socket = socket
+        self._reg = socket_mode_reg(socket)
+        regs = coordinator.data or {}
+        label = socket_name(regs, socket) or socket_type_str(
+            regs.get(socket_type_reg(socket))
+        )
+        self._attr_name = f"Socket {socket} {label}"
+        self._attr_unique_id = f"{coordinator.mac}_socket{socket}_mode"
+
+    @property
+    def current_option(self) -> str | None:
+        return FP_MODE_TO_STR.get(self.reg(self._reg))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int | str | None]:
+        return {
+            "socket": self._socket,
+            "appliance_type": socket_type_str(self.reg(socket_type_reg(self._socket))),
+        }
+
+    async def async_select_option(self, option: str) -> None:
+        value = FP_STR_TO_MODE.get(option)
+        if value is None:
+            return
+        await self.coordinator.async_write_register(self._reg, value)
+
+
+class PoolSpaModeSelect(DontekEntity, SelectEntity):
+    """Pool / Spa mode (register 65313: 0 = Pool, 1 = Spa).
+
+    Enabled by default only on an Aquatek with Spa Enabled turned on in the
+    app's Spa Setup. Otherwise created disabled: Oasis units without a pool-spa
+    valve report the register too, and switching it moves a physical actuator
+    and starts the pump.
     """
 
     _attr_translation_key = "pool_spa_mode"
     _attr_options = ["Pool", "Spa"]
-    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: DontekCoordinator) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{coordinator.mac}_pool_spa_mode"
+        regs = coordinator.data or {}
+        self._attr_entity_registry_enabled_default = (
+            not is_oasis(regs) and regs.get(REG_SPA_ENABLED) == 1
+        )
 
     @property
     def current_option(self) -> str | None:
