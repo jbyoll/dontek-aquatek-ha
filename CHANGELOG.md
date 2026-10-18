@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Oasis Smart** controllers (mapped live against the Oasis app): the heater climate
+  entity offers Auto (register 65348 = 2), plus Oasis-only entities created disabled by
+  default — `Pool / Spa mode` select (65313), `Roof temperature` sensor (80, half-degrees)
+  and `Solar pump` running flag (162). Device model shows "Oasis pool controller".
+
+### Fixed
+- Pump mode status/select decode 257 (0x0101) as On instead of "Unknown (257)".
+- Running speed shows unknown when the controller puts no speed index in register 92
+  (Oasis reports 0xFF) instead of a raw number.
+
 ## [0.7.2] - 2026-10-18
 
 ### Fixed

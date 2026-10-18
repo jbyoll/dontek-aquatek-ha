@@ -11,12 +11,16 @@ from .const import (
     FILTER_TIMES,
     FP_MODE_TO_STR,
     FP_STR_TO_MODE,
-    MODE_TO_STR,
+    POOL_SPA_STR_TO_MODE,
+    POOL_SPA_TO_STR,
     REG_FILTER_PUMP_MODE,
+    REG_POOL_SPA_MODE,
     REG_PUMP_MODE,
     REG_PUMP_SPEED,
     SPEED_COUNT,
     STR_TO_MODE,
+    is_oasis,
+    pump_mode_str,
 )
 from .coordinator import DontekCoordinator
 from .entity import DontekEntity
@@ -33,6 +37,8 @@ async def async_setup_entry(
     ]
     for ft, regs in FILTER_TIMES.items():
         entities.append(FilterTimeSpeedSelect(coordinator, ft, regs["speed"]))
+    if is_oasis(coordinator.data or {}):
+        entities.append(PoolSpaModeSelect(coordinator))
     async_add_entities(entities)
 
 
@@ -48,10 +54,8 @@ class PumpModeSelect(DontekEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        mode = self.reg(REG_PUMP_MODE)
-        if mode is None:
-            return None
-        return MODE_TO_STR.get(mode)
+        option = pump_mode_str(self.reg(REG_PUMP_MODE))
+        return option if option in self._attr_options else None
 
     async def async_select_option(self, option: str) -> None:
         value = STR_TO_MODE.get(option)
@@ -130,3 +134,29 @@ class FilterTimeSpeedSelect(DontekEntity, SelectEntity):
         except ValueError:
             return
         await self.coordinator.async_write_register(self._reg, speed - 1)
+
+
+class PoolSpaModeSelect(DontekEntity, SelectEntity):
+    """Pool / Spa valve on Oasis units (register 65313: 0 = Pool, 1 = Spa).
+
+    Created disabled: Oasis units without a pool-spa valve report the register
+    too, and switching it moves a physical actuator.
+    """
+
+    _attr_translation_key = "pool_spa_mode"
+    _attr_options = ["Pool", "Spa"]
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(self, coordinator: DontekCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.mac}_pool_spa_mode"
+
+    @property
+    def current_option(self) -> str | None:
+        return POOL_SPA_TO_STR.get(self.reg(REG_POOL_SPA_MODE))
+
+    async def async_select_option(self, option: str) -> None:
+        value = POOL_SPA_STR_TO_MODE.get(option)
+        if value is None:
+            return
+        await self.coordinator.async_write_register(REG_POOL_SPA_MODE, value)

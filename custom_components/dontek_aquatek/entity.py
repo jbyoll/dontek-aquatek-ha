@@ -8,7 +8,7 @@ from homeassistant.helpers.device_registry import (
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_NAME, DOMAIN
+from .const import CONF_NAME, DOMAIN, is_oasis
 from .coordinator import DontekCoordinator
 
 
@@ -20,11 +20,12 @@ class DontekEntity(CoordinatorEntity[DontekCoordinator]):
     def __init__(self, coordinator: DontekCoordinator) -> None:
         super().__init__(coordinator)
         name = coordinator.entry.data.get(CONF_NAME, "Pool Pump")
+        oasis = is_oasis(coordinator.data or {})
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.mac)},
             name=name,
             manufacturer="Dontek Electronics",
-            model="Aquatek pool controller",
+            model="Oasis pool controller" if oasis else "Aquatek pool controller",
             connections={(CONNECTION_NETWORK_MAC, format_mac(coordinator.mac))},
         )
 

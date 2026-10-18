@@ -40,6 +40,26 @@ MODE_AUTO = 65535
 MODE_TO_STR = {MODE_OFF: "Off", MODE_ON: "On", MODE_AUTO: "Auto"}
 STR_TO_MODE = {v: k for k, v in MODE_TO_STR.items()}
 
+
+def pump_mode_str(value: int | None) -> str | None:
+    """Decode the pump mode register, tolerating other pump types.
+
+    Aquatek + Hayward VSP reports 0 / 1025 (0x0401) / 65535. Other setups have
+    been seen reporting 257 (0x0101) for On, so fall back to the low byte:
+    0 = Off, 1 = On, 0xFFFF = Auto.
+    """
+    if value is None:
+        return None
+    if value in MODE_TO_STR:
+        return MODE_TO_STR[value]
+    low = value & 0xFF
+    if low == 1:
+        return "On"
+    if low == 0:
+        return "Off"
+    return f"Unknown ({value})"
+
+
 # Filter Pump = the Socket 1 appliance relay (a separate pump the controller
 # switches on/off/auto), distinct from the Hayward variable-speed pump above.
 # Mapped live 2026-10-04 by watching the app's writes. Simple 0/1/2 encoding.
@@ -126,8 +146,11 @@ REG_CLOCK_MIN = 65300
 RUNONCE_DEFAULT_MIN = 15
 
 # --- Heater (mapped live 2026-10-06 by watching the app's writes) ---
-# Heater socket on/off - the app offers only On/Off for the heater (no Auto).
+# Heater socket. The Aquatek app offers only On/Off (0/1). Oasis units use
+# 0/1/2 = Off/On/Auto (the Oasis app shows "Heat Pump: Auto"); the climate
+# entity only offers Auto when the controller reports as Oasis.
 REG_HEATER_ON = 65348
+HEATER_MODE_AUTO = 2
 # Setpoint in half-degrees: value = degrees C * 2 (76 = 38.0 C, 80 = 40.0 C).
 REG_HEATER_SETPOINT = 65447
 HEATER_MIN_TEMP = 10.0
@@ -140,3 +163,36 @@ REG_HEATER_ACTIVE = 172
 
 # Water Feature socket on/off (0/1). Often drives a valve/jets (e.g. spa jets).
 REG_WATER_FEATURE = 65345
+
+# --- Oasis Smart units (mapped live 2026-10-18 against the Oasis app) ---
+# Controller name as ASCII, two characters per register ("OASIS" on Oasis
+# Smart units). Used to tell Oasis controllers apart from Aquatek ones.
+REG_NAME_START = 65488
+REG_NAME_COUNT = 8
+# Pool / Spa valve actuator: 0 = Pool, 1 = Spa (registers 168/169 mirror it).
+REG_POOL_SPA_MODE = 65313
+POOL_SPA_TO_STR = {0: "Pool", 1: "Spa"}
+POOL_SPA_STR_TO_MODE = {v: k for k, v in POOL_SPA_TO_STR.items()}
+# Roof / solar collector temperature in half-degrees (113 = 56.5 C); registers
+# 54 and 56 mirror it. Reads 0 on units without a roof sensor.
+REG_ROOF_TEMP_HALF = 80
+# Solar pump running flag (sits next to 160 filter / 172 heater).
+REG_SOLAR_PUMP_ACTIVE = 162
+
+
+def decode_name(regs: dict[int, int]) -> str:
+    """Controller name from the ASCII name registers ("" if not present)."""
+    chars = []
+    for reg in range(REG_NAME_START, REG_NAME_START + REG_NAME_COUNT):
+        val = regs.get(reg)
+        if val is None:
+            break
+        for b in (val >> 8, val & 0xFF):
+            if 32 <= b < 127:
+                chars.append(chr(b))
+    return "".join(chars).strip()
+
+
+def is_oasis(regs: dict[int, int]) -> bool:
+    """True when the controller reports as an Oasis Smart unit."""
+    return decode_name(regs).upper().startswith("OASIS")

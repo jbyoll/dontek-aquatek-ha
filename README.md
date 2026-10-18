@@ -19,7 +19,7 @@
 
 ---
 
-Works with Dontek pool controllers sold under several brands — **Aquatek**, **Theralux
+Works with Dontek pool controllers sold under several brands — **Aquatek**, **Oasis Smart**, **Theralux
 Pool+ Manager**, **Waterco Pooltek**, **Henden Control** and **Aquamate X** — which are the
 same hardware with different labels.
 
@@ -47,6 +47,8 @@ same hardware with different labels.
 | 🏊 | **Filter 1–4 speed** | `select` — speed used by each schedule |
 | 🔥 | **Heater** | `climate` — Off / Heat, target temperature (0.5 °C steps), heating/idle *(disabled by default; enable it if you have a heater)* |
 | ♨️ | **Run til heated** | `switch` (config) — setting: heater switches off once the setpoint is reached instead of staying on *(disabled by default)* |
+| 🛁 | **Pool / Spa mode** | `select` — pool/spa valve on Oasis units *(Oasis only, disabled by default)* |
+| 🌞 | **Roof temperature** / **Solar pump** | `sensor` / `binary_sensor` — roof sensor and solar pump flag *(Oasis only, disabled by default)* |
 | ⛲ | **Water feature** | `switch` — water feature socket on/off (e.g. spa jets / valve) *(disabled by default)* |
 
 > In **Auto** mode the pump follows its filter schedule, so the live **Running speed** can

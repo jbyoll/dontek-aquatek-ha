@@ -10,6 +10,7 @@ from .const import CONF_MAC, DOMAIN
 from .coordinator import DontekCoordinator
 
 PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
     Platform.SENSOR,
     Platform.SELECT,
     Platform.NUMBER,
