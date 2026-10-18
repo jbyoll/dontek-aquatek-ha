@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Socket 2–5 mode** selects (Off / On / Auto, registers 65337–65340) for every socket
+  that has an appliance assigned in the app's Appliance Setup. Each one is named after the
+  socket's name in the app, or its appliance type, and carries the type as an attribute.
+  Sockets set to None or Always On are skipped. Mapped live on an Aquatek with Expansion 1.
+- **Pool / Spa mode** select (65313) on Aquatek controllers too, not just Oasis. Enabled
+  by default when Spa Enabled (65482) is on in the app's Spa Setup.
+
+### Changed
+- README register map: socket types/modes/names, valve types, Spa enabled; water
+  temperature row now shows register 79.
+
 ## [0.8.0] - 2026-10-18
 
 ### Added

@@ -47,7 +47,8 @@ same hardware with different labels.
 | 🏊 | **Filter 1–4 speed** | `select` — speed used by each schedule |
 | 🔥 | **Heater** | `climate` — Off / Heat, target temperature (0.5 °C steps), heating/idle *(disabled by default; enable it if you have a heater)* |
 | ♨️ | **Run til heated** | `switch` (config) — setting: heater switches off once the setpoint is reached instead of staying on *(disabled by default)* |
-| 🛁 | **Pool / Spa mode** | `select` — pool/spa valve on Oasis units *(Oasis only, disabled by default)* |
+| 🔌 | **Socket 2–5 mode** | `select` — Off / On / Auto for each socket assigned an appliance in the app (jet pump, lights, sanitiser …), named after the socket's name in the app or its appliance type. Sockets set to *None* or *Always On* are skipped |
+| 🛁 | **Pool / Spa mode** | `select` — switch between pool and spa. Enabled by default on an Aquatek with **Spa Enabled** turned on in the app's Spa Setup; otherwise created disabled |
 | 🌞 | **Roof temperature** / **Solar pump** | `sensor` / `binary_sensor` — roof sensor and solar pump flag *(Oasis only, disabled by default)* |
 | ⛲ | **Water feature** | `switch` — water feature socket on/off (e.g. spa jets / valve) *(disabled by default)* |
 
@@ -100,9 +101,14 @@ control goes through Dontek's AWS cloud:
 
 | Reading / control | Register | Encoding |
 |---|---|---|
-| Water temperature | `57545` | °C = raw ÷ 256 |
+| Water temperature | `79` (fallback `57545`) | °C = raw ÷ 2 (fallback: raw ÷ 256) |
 | Pump mode (Hayward VSP) | `65485` | `0` = Off · `1025` = On · `65535` = Auto |
-| Filter pump mode (Socket 1) | `65336` | `0` = Off · `1` = On · `2` = Auto |
+| Socket 1–5 mode | `65336`–`65340` | `0` = Off · `1` = On · `2` = Auto (`65336` = Socket 1 / Filter pump) |
+| Socket 1–5 appliance type | `65323`–`65327` | index into the app's list: `0` None · `1` Sanitiser · `2` Filter Pump · `3` Cleaning Pump · `4` Blower · `5` Pool Light · `6` Spa Light · `7` Garden Light · `8` Water Feature · `9` Solar · `10` Other · `11` Always On · `12` Jet Pump · `13` Heating Pump (ind.) · `14` UV Sanitiser |
+| Socket 1–5 name | 8 registers each from `57344` (Socket n = `57344 + 8 × (n − 1)`) | ASCII, 2 characters per register, space padded |
+| Valve 1–4 type | `65328`–`65331` | `0` = None (modes not mapped yet) |
+| Pool / Spa mode | `65313` | `0` = Pool · `1` = Spa |
+| Spa enabled (Spa Setup) | `65482` | `0` / `1` |
 | Pump speed (set/default) | `65463` | `0–3` → Speed 1–4 (display = value + 1) |
 | Live run-state word | `92` | high byte = state (`12` = Running) · low byte = running speed (0–3) |
 | Speed 1–4 power % | `65478`–`65481` | 0–100 % |
@@ -147,7 +153,8 @@ serial / QR code private.** This integration only communicates with the controll
 - [x] Expose Run Once as a one-shot action/button (done in v0.6.0)
 - [x] Heater (on/off + setpoint), Run til heated, Water feature (done in v0.7.0)
 - [ ] Chlorinator / lighting support on units that have them
-- [ ] Multiple appliances / expansion modules
+- [x] Expansion sockets (Off / On / Auto for sockets 2–5) and Pool / Spa mode on Aquatek
+- [ ] Valves, and separate pool / spa heater setpoints
 
 ## 🤝 Contributing
 
