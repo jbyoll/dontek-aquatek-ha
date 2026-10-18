@@ -1,4 +1,4 @@
-"""Binary sensors for Dontek Aquatek (Oasis solar pump)."""
+"""Binary sensors for Dontek Aquatek (socket running flags, Oasis solar pump)."""
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import (
@@ -9,7 +9,17 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, REG_SOLAR_PUMP_ACTIVE, is_oasis
+from .const import (
+    DOMAIN,
+    REG_SOLAR_PUMP_ACTIVE,
+    SOCKET_COUNT,
+    SOCKET_RUNNING_UNASSIGNED,
+    SOCKET_TYPE_NONE,
+    is_oasis,
+    socket_label,
+    socket_running_reg,
+    socket_type_reg,
+)
 from .coordinator import DontekCoordinator
 from .entity import DontekEntity
 
@@ -18,8 +28,47 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: DontekCoordinator = hass.data[DOMAIN][entry.entry_id]
-    if is_oasis(coordinator.data or {}):
-        async_add_entities([SolarPumpRunningSensor(coordinator)])
+    regs = coordinator.data or {}
+    entities: list[DontekEntity] = [
+        SocketRunningSensor(coordinator, socket)
+        for socket in range(1, SOCKET_COUNT + 1)
+        if socket_running_reg(socket) in regs
+    ]
+    if is_oasis(regs):
+        entities.append(SolarPumpRunningSensor(coordinator))
+    async_add_entities(entities)
+
+
+class SocketRunningSensor(DontekEntity, BinarySensorEntity):
+    """Whether a socket is energised right now (register 160 + (n - 1)).
+
+    0 = off, 1 = running, 2 = no appliance assigned (shown as unavailable).
+    Named like the socket's mode select and follows renames.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.RUNNING
+
+    def __init__(self, coordinator: DontekCoordinator, socket: int) -> None:
+        super().__init__(coordinator)
+        self._socket = socket
+        self._reg = socket_running_reg(socket)
+        self._attr_unique_id = f"{coordinator.mac}_socket{socket}_running"
+        stype = (coordinator.data or {}).get(socket_type_reg(socket))
+        self._attr_entity_registry_enabled_default = stype != SOCKET_TYPE_NONE
+
+    @property
+    def name(self) -> str:
+        return f"{socket_label(self.coordinator.data or {}, self._socket)} running"
+
+    @property
+    def available(self) -> bool:
+        value = self.reg(self._reg)
+        return super().available and value is not None and value != SOCKET_RUNNING_UNASSIGNED
+
+    @property
+    def is_on(self) -> bool | None:
+        value = self.reg(self._reg)
+        return None if value is None else value == 1
 
 
 class SolarPumpRunningSensor(DontekEntity, BinarySensorEntity):
