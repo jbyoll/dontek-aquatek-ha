@@ -22,6 +22,9 @@ from .const import (
     REG_HEATER_ACTIVE,
     REG_HEATER_ON,
     REG_HEATER_SETPOINT,
+    REG_POOL_SPA_MODE,
+    REG_SPA_SETPOINT,
+    heater_setpoint_reg,
     is_oasis,
     water_temp_c,
 )
@@ -42,7 +45,9 @@ async def async_setup_entry(
 
 
 class HeaterClimate(DontekEntity, ClimateEntity):
-    """Heater on/off (65348) with setpoint in half-degrees (65447).
+    """Heater on/off (65348) with setpoint in half-degrees.
+
+    The target follows Pool/Spa mode: pool setpoint 65447, spa setpoint 65441.
 
     Oasis units also have an Auto mode (register value 2), offered only when
     the controller reports as Oasis.
@@ -96,10 +101,21 @@ class HeaterClimate(DontekEntity, ClimateEntity):
 
     @property
     def target_temperature(self) -> float | None:
-        raw = self.reg(REG_HEATER_SETPOINT)
+        raw = self.reg(heater_setpoint_reg(self.coordinator.data or {}))
         if raw is None:
             return None
         return raw / 2
+
+    @property
+    def extra_state_attributes(self) -> dict[str, float | str | None]:
+        pool = self.reg(REG_HEATER_SETPOINT)
+        spa = self.reg(REG_SPA_SETPOINT)
+        mode = self.reg(REG_POOL_SPA_MODE)
+        return {
+            "pool_setpoint": None if pool is None else pool / 2,
+            "spa_setpoint": None if spa is None else spa / 2,
+            "setpoint_in_use": "spa" if mode == 1 and spa is not None else "pool",
+        }
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         temp = kwargs.get(ATTR_TEMPERATURE)
@@ -107,8 +123,9 @@ class HeaterClimate(DontekEntity, ClimateEntity):
             return
         # clamp before encoding so a bad value can never reach the heater
         temp = min(max(float(temp), HEATER_MIN_TEMP), HEATER_MAX_TEMP)
+        # writes the setpoint for the current Pool/Spa mode, as the app does
         await self.coordinator.async_write_register(
-            REG_HEATER_SETPOINT, int(round(temp * 2))
+            heater_setpoint_reg(self.coordinator.data or {}), int(round(temp * 2))
         )
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
