@@ -1,4 +1,4 @@
-"""Binary sensors for Dontek Aquatek (socket running flags, Oasis solar pump)."""
+"""Binary sensors for Dontek Aquatek (socket running flags, valves, Oasis solar pump)."""
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import (
@@ -16,9 +16,14 @@ from .const import (
     SOCKET_RUNNING_UNASSIGNED,
     SOCKET_TYPE_NONE,
     is_oasis,
+    VALVE_COUNT,
     socket_label,
+    socket_present,
     socket_running_reg,
     socket_type_reg,
+    valve_state_reg,
+    valve_type_reg,
+    valve_type_str,
 )
 from .coordinator import DontekCoordinator
 from .entity import DontekEntity
@@ -32,8 +37,12 @@ async def async_setup_entry(
     entities: list[DontekEntity] = [
         SocketRunningSensor(coordinator, socket)
         for socket in range(1, SOCKET_COUNT + 1)
-        if socket_running_reg(socket) in regs
+        if socket_present(regs, socket) and socket_running_reg(socket) in regs
     ]
+    for valve in range(1, VALVE_COUNT + 1):
+        vtype = regs.get(valve_type_reg(valve))
+        if vtype and valve_state_reg(valve) in regs:
+            entities.append(ValveStateSensor(coordinator, valve))
     if is_oasis(regs):
         entities.append(SolarPumpRunningSensor(coordinator))
     async_add_entities(entities)
@@ -69,6 +78,42 @@ class SocketRunningSensor(DontekEntity, BinarySensorEntity):
     def is_on(self) -> bool | None:
         value = self.reg(self._reg)
         return None if value is None else value == 1
+
+
+class ValveStateSensor(DontekEntity, BinarySensorEntity):
+    """Live state of a valve the app has a function assigned to (168 + (n - 1)).
+
+    Status only: the app can't move valves directly. On means the valve is in
+    its switched position, e.g. a Pool/Spa valve reads on while in Spa mode.
+    """
+
+    def __init__(self, coordinator: DontekCoordinator, valve: int) -> None:
+        super().__init__(coordinator)
+        self._valve = valve
+        self._reg = valve_state_reg(valve)
+        self._attr_unique_id = f"{coordinator.mac}_valve{valve}"
+
+    @property
+    def name(self) -> str:
+        vtype = valve_type_str(self.reg(valve_type_reg(self._valve)))
+        return f"Valve {self._valve} {vtype}" if vtype else f"Valve {self._valve}"
+
+    @property
+    def available(self) -> bool:
+        value = self.reg(self._reg)
+        return super().available and value is not None and value != SOCKET_RUNNING_UNASSIGNED
+
+    @property
+    def is_on(self) -> bool | None:
+        value = self.reg(self._reg)
+        return None if value is None else value == 1
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int | str | None]:
+        return {
+            "valve": self._valve,
+            "valve_type": valve_type_str(self.reg(valve_type_reg(self._valve))),
+        }
 
 
 class SolarPumpRunningSensor(DontekEntity, BinarySensorEntity):

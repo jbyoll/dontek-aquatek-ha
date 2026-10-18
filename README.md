@@ -45,11 +45,12 @@ same hardware with different labels.
 | ⏱️ | **Filter 1–4 start / end** | `time` — each schedule window (all four filter times) |
 | 🔁 | **Filter 1–4 enabled** | `switch` — turn each schedule on/off |
 | 🏊 | **Filter 1–4 speed** | `select` — speed used by each schedule |
-| 🔥 | **Heater** | `climate` — Off / Heat, target temperature (0.5 °C steps), heating/idle *(disabled by default; enable it if you have a heater)* |
+| 🔥 | **Heater** | `climate` — Off / Heat, target temperature (0.5 °C steps; follows Pool / Spa mode, using the spa setpoint while in Spa), heating/idle *(disabled by default; enable it if you have a heater)* |
 | ♨️ | **Run til heated** | `switch` (config) — setting: heater switches off once the setpoint is reached instead of staying on *(disabled by default)* |
-| 🔌 | **Socket 2–5** | `select` — Off / On / Auto for each socket, named after the socket's name in the app or its appliance type (e.g. *Socket 2 Robot*). Sockets set to *Always On* show On but can't be switched (same as the app); sockets set to *None* are unavailable |
-| 🛠️ | **Socket 1–5 type** / **name** | `select` / `text` (config) — change a socket's appliance type and its 16-character name, the same settings as the app's Appliance Setup. ⚠️ Changing a socket's type turns it Off |
-| 🟢 | **Socket 1–5 running** | `binary_sensor` — whether each socket is energised right now. Unavailable when no appliance is assigned. For a variable-speed pump this is the relay feeding the pump, so it can read *running* while the pump itself is idle |
+| 🔌 | **Socket 2–8** | `select` — Off / On / Auto for each socket, named after the socket's name in the app or its appliance type (e.g. *Socket 2 Robot*). Sockets set to *Always On* show On but can't be switched (same as the app); sockets set to *None* are unavailable |
+| 🛠️ | **Socket 1–8 type** / **name** | `select` / `text` (config) — change a socket's appliance type and its 16-character name, the same settings as the app's Appliance Setup. ⚠️ Changing a socket's type turns it Off |
+| 🟢 | **Socket 1–8 running** | `binary_sensor` — whether each socket is energised right now. Unavailable when no appliance is assigned. For a variable-speed pump this is the relay feeding the pump, so it can read *running* while the pump itself is idle |
+| 🚰 | **Valve 1–4** | `binary_sensor` — state of each valve that has a function assigned in the app (e.g. *Valve 1 Pool/Spa* is on while in Spa). Status only, as in the app |
 | 🛁 | **Pool / Spa mode** | `select` — switch between pool and spa. Enabled by default on an Aquatek with **Spa Enabled** turned on in the app's Spa Setup; otherwise created disabled |
 | 🌞 | **Roof temperature** / **Solar pump** | `sensor` / `binary_sensor` — roof sensor and solar pump flag *(Oasis only, disabled by default)* |
 | ⛲ | **Water feature** | `switch` — water feature socket on/off (e.g. spa jets / valve) *(disabled by default)* |
@@ -105,11 +106,13 @@ control goes through Dontek's AWS cloud:
 |---|---|---|
 | Water temperature | `79` (fallback `57545`) | °C = raw ÷ 2 (fallback: raw ÷ 256) |
 | Pump mode (Hayward VSP) | `65485` | `0` = Off · `1025` = On · `65535` = Auto |
-| Socket 1–5 mode | `65336`–`65340` | `0` = Off · `1` = On · `2` = Auto (`65336` = Socket 1 / Filter pump) |
-| Socket 1–5 appliance type | `65323`–`65327` | index into the app's list: `0` None · `1` Sanitiser · `2` Filter Pump · `3` Cleaning Pump · `4` Blower · `5` Pool Light · `6` Spa Light · `7` Garden Light · `8` Water Feature · `9` Solar · `10` Other · `11` Always On · `12` Jet Pump · `13` Heating Pump (ind.) · `14` UV Sanitiser |
-| Socket 1–5 name | 8 registers each from `57344` (Socket n = `57344 + 8 × (n − 1)`) | ASCII, 2 characters per register, max 16. The app writes all 8 in one message, zero padded; empty = all `0` |
-| Socket 1–5 running (live) | `160`–`164` | `0` = off · `1` = running · `2` = no appliance assigned |
-| Valve 1–4 type | `65328`–`65331` | `0` = None (modes not mapped yet) |
+| Socket 1–8 mode | `65336`–`65343` | `0` = Off · `1` = On · `2` = Auto (`65336` = Socket 1 / Filter pump) |
+| Socket 1–8 appliance type | `65323`–`65330` | index into the app's list: `0` None · `1` Sanitiser · `2` Filter Pump · `3` Cleaning Pump · `4` Blower · `5` Pool Light · `6` Spa Light · `7` Garden Light · `8` Water Feature · `9` Solar · `10` Other · `11` Always On · `12` Jet Pump · `13` Heating Pump (ind.) · `14` UV Sanitiser |
+| Socket 1–8 name | 8 registers each from `57344` (Socket n = `57344 + 8 × (n − 1)`) | ASCII, 2 characters per register, max 16. The app writes all 8 in one message, zero padded; empty = all `0` |
+| Socket 1–8 running (live) | `160`–`167` | `0` = off · `1` = running · `2` = no appliance assigned |
+| Valve 1–4 type | `65331`–`65334` | `0` None · `1` Pool/Spa · `2` Solar · `3` Water Feature · `4` In Floor · `5` Feature from Solar · `6` Other · `7` Heating |
+| Valve 1–4 state (live) | `168`–`171` | `0` / `1` (`1` = switched, e.g. Spa) · `2` = not assigned |
+| Output layout | — | 13 outputs in order (sockets 1–8, valves 1–4, VF contact): type `65323 + i`, mode `65336 + i`, live flag `160 + i`. The heater (`65348` / `172`) is the VF contact; water feature `65345` is valve 2's mode |
 | Pool / Spa mode | `65313` | `0` = Pool · `1` = Spa |
 | Spa enabled (Spa Setup) | `65482` | `0` / `1` |
 | Pump speed (set/default) | `65463` | `0–3` → Speed 1–4 (display = value + 1) |
@@ -119,7 +122,8 @@ control goes through Dontek's AWS cloud:
 | Filter Time start / end | FT1 `65319`/`65320` · FT2 `65321`/`65322` · FT3 `65469`/`65470` · FT4 `65471`/`65472` | hour × 256 + minute (08:00 = 2048) |
 | Filter Time speed | FT1 `65473` · FT2 `65474` · FT3 `65475` · FT4 `65476` | 0–3 → Speed 1–4 |
 | Heater on/off | `65348` | `0` = Off · `1` = On (no Auto in the app) |
-| Heater setpoint | `65447` | °C × 2 (`80` = 40.0 °C) |
+| Heater setpoint (pool) | `65447` | °C × 2 (`80` = 40.0 °C) |
+| Heater setpoint (spa) | `65441` | °C × 2 (`74` = 37.0 °C); used while Pool/Spa mode is Spa |
 | Run til heated (setting) | `65500` | `0` / `1` |
 | Heater active (calling for heat) | `172` | `0` / `1` (`2` seen on a unit with no heater) |
 | Water feature (socket) | `65345` | `0` = Off · `1` = On |

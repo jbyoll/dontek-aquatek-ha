@@ -15,6 +15,7 @@ from .const import (
     encode_name,
     socket_name,
     socket_name_reg,
+    socket_present,
 )
 from .coordinator import DontekCoordinator
 from .entity import DontekEntity
@@ -24,8 +25,11 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: DontekCoordinator = hass.data[DOMAIN][entry.entry_id]
+    regs = coordinator.data or {}
     async_add_entities(
-        SocketNameText(coordinator, socket) for socket in range(1, SOCKET_COUNT + 1)
+        SocketNameText(coordinator, socket)
+        for socket in range(1, SOCKET_COUNT + 1)
+        if socket_present(regs, socket)
     )
 
 

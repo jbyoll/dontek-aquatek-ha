@@ -68,12 +68,17 @@ FP_MODE_TO_STR = {0: "Off", 1: "On", 2: "Auto"}
 FP_STR_TO_MODE = {v: k for k, v in FP_MODE_TO_STR.items()}
 
 # --- Sockets (mapped live 2026-10-18 on an Aquatek, fw 1.17B1 + Expansion 1) ---
+# The controller has 13 outputs in a fixed order: sockets 1-8, valves 1-4 and
+# the VF contact. Each has a type at 65323 + i, a mode at 65336 + i, a live
+# flag at 160 + i and a name block at 57344 + 8 * i (i = 0..12). Heater 65348 /
+# 172 are the VF contact's mode/flag; water feature 65345 is valve 2's mode.
 # Sockets 1-2 are on the main unit, 3-5 on Expansion 1. Each socket has a type
 # (what the app's Appliance Setup assigns to it), an Off/On/Auto mode (same
 # 0/1/2 encoding as REG_FILTER_PUMP_MODE, which is socket 1's mode) and an
 # optional 16-character name the owner can set in the app. Changing a socket's
 # type resets its mode to Off (seen live).
-SOCKET_COUNT = 5
+SOCKET_COUNT = 8  # 6-8 only exist on units with more expansion sockets
+SOCKET_BASE_COUNT = 5  # always listed by the app
 REG_SOCKET_TYPE_BASE = 65323  # socket n type = 65323 + (n - 1)
 REG_SOCKET_MODE_BASE = 65336  # socket n mode = 65336 + (n - 1)
 REG_SOCKET_NAME_BASE = 57344  # socket n name = 8 registers from 57344 + 8 * (n - 1)
@@ -172,10 +177,48 @@ def socket_running_reg(socket: int) -> int:
     return REG_SOCKET_RUNNING_BASE + socket - 1
 
 
-# Valve 1-4 type (0 = None). Valve modes aren't mapped yet: no test unit has a
-# valve assigned.
-REG_VALVE_TYPE_BASE = 65328
+def socket_present(regs: dict[int, int], socket: int) -> bool:
+    """Sockets 1-5 always; 6-8 only when the controller has one assigned."""
+    stype = regs.get(socket_type_reg(socket))
+    if stype is None:
+        return False
+    return socket <= SOCKET_BASE_COUNT or stype != SOCKET_TYPE_NONE
+
+
+# Valves 1-4 (outputs 9-12). The app only shows their state; they move with
+# Pool/Spa and similar functions. Type list from the app's valve dropdown
+# (Theralink, 2026-10-18); valves set to Pool/Spa read type 1 and their flag
+# goes 0 -> 1 when switching to Spa.
 VALVE_COUNT = 4
+REG_VALVE_TYPE_BASE = 65331
+REG_VALVE_STATE_BASE = 168
+VALVE_TYPES = (
+    "None",
+    "Pool/Spa",
+    "Solar",
+    "Water Feature",
+    "In Floor",
+    "Feature from Solar",
+    "Other",
+    "Heating",
+)
+
+
+def valve_type_reg(valve: int) -> int:
+    return REG_VALVE_TYPE_BASE + valve - 1
+
+
+def valve_state_reg(valve: int) -> int:
+    return REG_VALVE_STATE_BASE + valve - 1
+
+
+def valve_type_str(value: int | None) -> str | None:
+    if value is None:
+        return None
+    if 0 <= value < len(VALVE_TYPES):
+        return VALVE_TYPES[value]
+    return f"Unknown ({value})"
+
 
 # Pump speed selector. Register is zero-based; displayed speed = value + 1 (4 speeds).
 REG_PUMP_SPEED = 65463
@@ -263,6 +306,9 @@ REG_HEATER_ON = 65348
 HEATER_MODE_AUTO = 2
 # Setpoint in half-degrees: value = degrees C * 2 (76 = 38.0 C, 80 = 40.0 C).
 REG_HEATER_SETPOINT = 65447
+# Separate spa setpoint, same encoding (74 = 37.0 C). Mapped on a Theralink
+# 2026-10-18. The heater uses it while Pool/Spa mode is Spa.
+REG_SPA_SETPOINT = 65441
 HEATER_MIN_TEMP = 10.0
 HEATER_MAX_TEMP = 40.0
 # "Run til heated" setting (0/1): heater stops once the setpoint is reached
@@ -302,3 +348,10 @@ def decode_name(regs: dict[int, int]) -> str:
 def is_oasis(regs: dict[int, int]) -> bool:
     """True when the controller reports as an Oasis Smart unit."""
     return decode_name(regs).upper().startswith("OASIS")
+
+
+def heater_setpoint_reg(regs: dict[int, int]) -> int:
+    """Setpoint register the heater is using: spa while in Spa mode, else pool."""
+    if regs.get(REG_POOL_SPA_MODE) == 1 and REG_SPA_SETPOINT in regs:
+        return REG_SPA_SETPOINT
+    return REG_HEATER_SETPOINT

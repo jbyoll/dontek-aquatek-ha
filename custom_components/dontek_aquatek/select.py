@@ -31,6 +31,7 @@ from .const import (
     socket_label,
     socket_mode_reg,
     socket_name,
+    socket_present,
     socket_type_reg,
     socket_type_str,
 )
@@ -52,7 +53,7 @@ async def async_setup_entry(
     regs = coordinator.data or {}
     # Socket 1's mode is the Filter Pump select above.
     for socket in range(1, SOCKET_COUNT + 1):
-        if socket_type_reg(socket) not in regs:
+        if not socket_present(regs, socket):
             continue
         entities.append(SocketTypeSelect(coordinator, socket))
         if socket > 1:
@@ -157,7 +158,7 @@ class FilterTimeSpeedSelect(DontekEntity, SelectEntity):
 
 
 class SocketModeSelect(DontekEntity, SelectEntity):
-    """Off / On / Auto for sockets 2-5 (registers 65337-65340).
+    """Off / On / Auto for sockets 2-8 (registers 65337-65343).
 
     Named after the socket's name in the app, or its appliance type if it has
     no name, and follows renames and type changes without a reload. A socket
@@ -214,7 +215,7 @@ class SocketModeSelect(DontekEntity, SelectEntity):
 class SocketTypeSelect(DontekEntity, SelectEntity):
     """Appliance type of a socket, as set in the app's Appliance Setup.
 
-    Registers 65323-65327, index into SOCKET_TYPES. The controller turns the
+    Registers 65323-65330, index into SOCKET_TYPES. The controller turns the
     socket Off when its type changes, like the app does.
     """
 

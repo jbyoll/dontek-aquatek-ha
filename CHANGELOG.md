@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Spa setpoint** (register 65441, mapped on a Theralink): the heater's target temperature
+  now follows Pool / Spa mode, showing and setting the spa setpoint while in Spa. Both
+  setpoints are attributes on the heater entity (#12).
+- **Valve 1–4** binary sensors (168–171) for valves with a function assigned in the app,
+  named by valve type (e.g. "Valve 1 Pool/Spa", on while in Spa). Status only, as in the
+  app (#12).
+- **Sockets 6–8** (mode, type, name, running) on controllers that have them assigned, e.g.
+  an Oasis in-floor pump on socket 6 (#15).
+
+### Fixed
+- Valve type registers are 65331–65334, not 65328–65331 (those are socket 6–8 types).
+  The controller has 13 outputs in a fixed order (sockets 1–8, valves 1–4, VF contact),
+  each with a type at 65323 + i, a mode at 65336 + i and a live flag at 160 + i.
+
 ## [0.11.0] - 2026-10-18
 
 ### Added
