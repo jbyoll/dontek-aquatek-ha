@@ -71,7 +71,7 @@ FP_STR_TO_MODE = {v: k for k, v in FP_MODE_TO_STR.items()}
 # The controller has 13 outputs in a fixed order: sockets 1-8, valves 1-4 and
 # the VF contact. Each has a type at 65323 + i, a mode at 65336 + i, a live
 # flag at 160 + i and a name block at 57344 + 8 * i (i = 0..12). Heater 65348 /
-# 172 are the VF contact's mode/flag; water feature 65345 is valve 2's mode.
+# 172 are the VF contact's mode/flag; valve n's mode is 65344 + (n - 1).
 # Sockets 1-2 are on the main unit, 3-5 on Expansion 1. Each socket has a type
 # (what the app's Appliance Setup assigns to it), an Off/On/Auto mode (same
 # 0/1/2 encoding as REG_FILTER_PUMP_MODE, which is socket 1's mode) and an
@@ -220,6 +220,38 @@ def valve_type_str(value: int | None) -> str | None:
     return f"Unknown ({value})"
 
 
+# Valve n mode = 65344 + (n - 1), i.e. outputs 9-12 of the 13-output layout
+# (65336 + 8 + (n - 1)). 0 = Off, 1 = On. Mapped on an Oasis Smart (#23): the
+# app turns a Water Feature valve 3 on/off by writing 65346 = 1 / 0, and the
+# valve's live flag (170) follows about a second later.
+REG_VALVE_MODE_BASE = 65344
+VALVE_TYPE_NONE = 0
+VALVE_TYPE_POOL_SPA = 1
+VALVE_TYPE_WATER_FEATURE = 3
+# Valve types that are a feature you switch by hand: Water Feature, Feature
+# from Solar, Other. Their switches are enabled by default; Solar, In Floor
+# and Heating valves follow the controller's own logic, so theirs are created
+# disabled. Pool/Spa valves get no switch - they follow the Pool / Spa mode.
+VALVE_TYPES_MANUAL = (3, 5, 6)
+
+
+def valve_mode_reg(valve: int) -> int:
+    return REG_VALVE_MODE_BASE + valve - 1
+
+
+def valve_switchable(vtype: int | None) -> bool:
+    """A valve gets an on/off switch unless it has no function or is Pool/Spa."""
+    return vtype is not None and vtype not in (VALVE_TYPE_NONE, VALVE_TYPE_POOL_SPA)
+
+
+def water_feature_valve(regs: dict[int, int]) -> int | None:
+    """The first valve set to Water Feature, or None."""
+    for valve in range(1, VALVE_COUNT + 1):
+        if regs.get(valve_type_reg(valve)) == VALVE_TYPE_WATER_FEATURE:
+            return valve
+    return None
+
+
 # Pump speed selector. Register is zero-based; displayed speed = value + 1 (4 speeds).
 REG_PUMP_SPEED = 65463
 SPEED_COUNT = 4
@@ -317,7 +349,9 @@ REG_HEATER_RUN_TIL_HEATED = 65500
 # Live heater status: 1 while the controller is calling for heat.
 REG_HEATER_ACTIVE = 172
 
-# Water Feature socket on/off (0/1). Often drives a valve/jets (e.g. spa jets).
+# Legacy "Water feature" switch register: valve 2's mode (65345), where the
+# first unit that mapped it had its water feature. Only used when no valve is
+# typed Water Feature; otherwise the switch follows that valve (#23).
 REG_WATER_FEATURE = 65345
 
 # --- Oasis Smart units (mapped live 2026-10-18 against the Oasis app) ---

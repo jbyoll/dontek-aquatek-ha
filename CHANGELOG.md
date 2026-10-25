@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Valve 1–4 switches** (modes 65344–65347): on/off for each valve with a function other
+  than Pool/Spa, named by type (e.g. "Valve 3 Water Feature"). Enabled by default for Water
+  Feature, Feature from Solar and Other; created disabled for Solar, In Floor and Heating,
+  which the controller moves itself. Mapped from an Oasis Smart capture (#23).
+
+### Fixed
+- **Water feature** switch wrote register 65345 (valve 2) on every controller, so on units
+  with the water feature on another valve it did nothing (#23). It is now the switch of the
+  valve typed Water Feature (or of valve 2 if no valve is), keeping the same entity id, and
+  is renamed after that valve (e.g. "Valve 3 Water Feature"). Controllers where no valve
+  switch can take it over keep the old switch on 65345 unchanged.
+
+### Documentation
+- **Filter pump mode** controls Socket 1, whatever it's set to in the app (#22).
+
 ## [0.12.0] - 2026-10-18
 
 ### Added

@@ -83,8 +83,9 @@ class SocketRunningSensor(DontekEntity, BinarySensorEntity):
 class ValveStateSensor(DontekEntity, BinarySensorEntity):
     """Live state of a valve the app has a function assigned to (168 + (n - 1)).
 
-    Status only: the app can't move valves directly. On means the valve is in
-    its switched position, e.g. a Pool/Spa valve reads on while in Spa mode.
+    On means the valve is in its switched position, e.g. a Pool/Spa valve reads
+    on while in Spa mode. Valves other than Pool/Spa also get a switch
+    (switch.ValveSwitch); this sensor is the confirmed live state.
     """
 
     def __init__(self, coordinator: DontekCoordinator, valve: int) -> None:
