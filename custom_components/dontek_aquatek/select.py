@@ -31,6 +31,7 @@ from .const import (
     is_oasis,
     light_colour_str,
     light_colour_value,
+    light_type_mapped,
     pump_mode_str,
     socket_controllable,
     socket_label,
@@ -287,6 +288,11 @@ class LightColourSelect(DontekEntity, SelectEntity):
 
     Created when a socket is set to Pool Light or Spa Light. Only picks the
     colour; the light's on/off is that socket's mode select (#22).
+
+    The high byte looks like the light type set in the app's Light Setup, and
+    only type 3's colour list is mapped. With any other type the select is
+    unavailable and refuses writes rather than showing the wrong colours, and
+    it's created disabled if the controller reports another type at setup (#23).
     """
 
     _attr_translation_key = "light_colour"
@@ -295,14 +301,27 @@ class LightColourSelect(DontekEntity, SelectEntity):
     def __init__(self, coordinator: DontekCoordinator) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{coordinator.mac}_light_colour"
+        self._attr_entity_registry_enabled_default = light_type_mapped(
+            (coordinator.data or {}).get(REG_LIGHT_COLOUR)
+        )
+
+    @property
+    def available(self) -> bool:
+        return super().available and light_type_mapped(self.reg(REG_LIGHT_COLOUR))
 
     @property
     def current_option(self) -> str | None:
-        return light_colour_str(self.reg(REG_LIGHT_COLOUR))
+        value = self.reg(REG_LIGHT_COLOUR)
+        return light_colour_str(value) if light_type_mapped(value) else None
 
     async def async_select_option(self, option: str) -> None:
         if option not in LIGHT_COLOURS:
             return
+        if not light_type_mapped(self.reg(REG_LIGHT_COLOUR)):
+            raise HomeAssistantError(
+                "This light type's colours aren't mapped yet; only the Theralux list "
+                "(type 3) is supported"
+            )
         await self.coordinator.async_write_register(
             REG_LIGHT_COLOUR, light_colour_value(self.reg(REG_LIGHT_COLOUR), option)
         )
