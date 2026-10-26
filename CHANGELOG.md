@@ -22,6 +22,17 @@ All notable changes to this project are documented here. The format is based on
 ### Documentation
 - **Filter pump mode** controls Socket 1, whatever it's set to in the app (#22).
 
+## [0.13.0] - 2026-10-26
+
+### Added
+- **Pool light colour** select (register 65349): the 13 colours and shows from the app's
+  colour row, written as one register (high byte 3, low byte = colour). Created when a
+  socket is set to Pool Light or Spa Light. Mapped from a Theralux Pool+ Manager capture (#22).
+- **pH** and **ORP** sensors (registers 173 / 174: pH × 10, mV ÷ 10) for controllers with a
+  chemistry module. Enabled by default only when the controller reports a plausible reading (#22).
+- **pH set point** and **ORP set point** sensors (registers 65503 / 65502, same encodings),
+  read-only because changing them changes chemical dosing (#22).
+
 ## [0.12.0] - 2026-10-18
 
 ### Added

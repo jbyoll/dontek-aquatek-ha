@@ -389,3 +389,74 @@ def heater_setpoint_reg(regs: dict[int, int]) -> int:
     if regs.get(REG_POOL_SPA_MODE) == 1 and REG_SPA_SETPOINT in regs:
         return REG_SPA_SETPOINT
     return REG_HEATER_SETPOINT
+
+
+# --- Pool light colour (mapped on a Theralux Pool+ Manager, #22) ---
+# One register: high byte 3, low byte = index into the app's colour row. The
+# app writes e.g. 768 (0x0300) for Blue and 780 (0x030c) for Flash, with no
+# power cycling. The light's on/off is its socket's mode (socket 1 on that unit).
+REG_LIGHT_COLOUR = 65349
+LIGHT_COLOURS = (
+    "Blue",
+    "Aqua",
+    "Green",
+    "Gold",
+    "Magenta",
+    "Red",
+    "White",
+    "Seaside",
+    "Slow scroll",
+    "Fast scroll",
+    "Fireworks",
+    "Disco",
+    "Flash",
+)
+LIGHT_COLOUR_HIGH_BYTE = 3  # seen on every write; kept as read when non-zero
+SOCKET_TYPES_LIGHT = (5, 6)  # Pool Light, Spa Light
+
+
+def light_colour_str(value: int | None) -> str | None:
+    """Colour name from register 65349 (low byte), or None if unknown."""
+    if value is None:
+        return None
+    index = value & 0xFF
+    return LIGHT_COLOURS[index] if index < len(LIGHT_COLOURS) else None
+
+
+def light_colour_value(current: int | None, colour: str) -> int:
+    """Register value for a colour, keeping the high byte the controller uses."""
+    high = (current or 0) >> 8 or LIGHT_COLOUR_HIGH_BYTE
+    return (high << 8) | LIGHT_COLOURS.index(colour)
+
+
+def has_light_socket(regs: dict[int, int]) -> bool:
+    """True if any socket is set to Pool Light or Spa Light."""
+    return any(regs.get(socket_type_reg(s)) in SOCKET_TYPES_LIGHT for s in range(1, SOCKET_COUNT + 1))
+
+
+# --- Water chemistry (chemistry module; mapped on a Theralux Pool+ Manager, #22) ---
+# pH x 10 (78 = 7.8) and ORP / 10 (66 = 660 mV), matching the app. Registers
+# 182 / 183 carry a second copy; 182 moved 7.8 -> 8.0 -> 7.8 during the capture
+# while 173 held what the app showed, so 173 / 174 are used.
+REG_PH = 173
+REG_ORP = 174
+# Set points, same encodings (mapped from the app's writes, #22): pH 65503
+# (74 = 7.4; the app steps 0.2) and ORP 65502 (73 = 730 mV; steps 20 mV).
+# Exposed read-only: writing them changes chemical dosing. 65520 / 65521 sit
+# near the pH set point but don't move with it; 65441 is the spa set point.
+REG_PH_SETPOINT = 65503
+REG_ORP_SETPOINT = 65502
+
+
+def ph_value(raw: int | None) -> float | None:
+    """pH from register 173, or None when there's no plausible reading (no module)."""
+    if raw is None or not 40 <= raw <= 100:
+        return None
+    return raw / 10
+
+
+def orp_value(raw: int | None) -> int | None:
+    """ORP in mV from register 174, or None when there's no plausible reading."""
+    if raw is None or not 1 <= raw <= 150:
+        return None
+    return raw * 10
