@@ -7,12 +7,14 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import UnitOfElectricPotential, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     DOMAIN,
+    REG_ORP,
+    REG_PH,
     REG_PUMP_MODE,
     REG_ROOF_TEMP_HALF,
     REG_RUN_STATE,
@@ -20,6 +22,8 @@ from .const import (
     RUN_STATE_RUNNING,
     SPEED_COUNT,
     is_oasis,
+    orp_value,
+    ph_value,
     pump_mode_str,
     water_temp_c,
 )
@@ -37,8 +41,14 @@ async def async_setup_entry(
         PumpActivitySensor(coordinator),
         RunningSpeedSensor(coordinator),
     ]
-    if is_oasis(coordinator.data or {}):
+    regs = coordinator.data or {}
+    if is_oasis(regs):
         entities.append(RoofTemperatureSensor(coordinator))
+    # chemistry module (#22): enabled by default only when it reports a reading
+    if REG_PH in regs:
+        entities.append(PhSensor(coordinator))
+    if REG_ORP in regs:
+        entities.append(OrpSensor(coordinator))
     async_add_entities(entities)
 
 
@@ -140,3 +150,59 @@ class RoofTemperatureSensor(DontekEntity, SensorEntity):
         if not raw:
             return None  # 0 = no roof sensor fitted
         return raw / 2
+
+
+class PhSensor(DontekEntity, SensorEntity):
+    """Pool pH from a chemistry module (register 173, pH x 10).
+
+    Enabled by default only if the controller reports a plausible pH at setup;
+    unavailable while it doesn't (no chemistry module).
+    """
+
+    _attr_translation_key = "ph"
+    _attr_device_class = SensorDeviceClass.PH
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+
+    def __init__(self, coordinator: DontekCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.mac}_ph"
+        self._attr_entity_registry_enabled_default = (
+            ph_value((coordinator.data or {}).get(REG_PH)) is not None
+        )
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.native_value is not None
+
+    @property
+    def native_value(self) -> float | None:
+        return ph_value(self.reg(REG_PH))
+
+
+class OrpSensor(DontekEntity, SensorEntity):
+    """Pool ORP from a chemistry module (register 174, mV / 10).
+
+    Enabled by default only if the controller reports a plausible ORP at setup;
+    unavailable while it doesn't (no chemistry module).
+    """
+
+    _attr_translation_key = "orp"
+    _attr_native_unit_of_measurement = UnitOfElectricPotential.MILLIVOLT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:flask-outline"
+
+    def __init__(self, coordinator: DontekCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.mac}_orp"
+        self._attr_entity_registry_enabled_default = (
+            orp_value((coordinator.data or {}).get(REG_ORP)) is not None
+        )
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.native_value is not None
+
+    @property
+    def native_value(self) -> int | None:
+        return orp_value(self.reg(REG_ORP))

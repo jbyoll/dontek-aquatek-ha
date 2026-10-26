@@ -34,6 +34,12 @@
       },
       "roof_temperature": {
         "name": "Roof temperature"
+      },
+      "ph": {
+        "name": "pH"
+      },
+      "orp": {
+        "name": "ORP"
       }
     },
     "select": {
@@ -60,6 +66,9 @@
       },
       "pool_spa_mode": {
         "name": "Pool / Spa mode"
+      },
+      "light_colour": {
+        "name": "Pool light colour"
       }
     },
     "number": {

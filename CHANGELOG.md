@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Pool light colour** select (register 65349): the 13 colours and shows from the app's
+  colour row, written as one register (high byte 3, low byte = colour). Created when a
+  socket is set to Pool Light or Spa Light. Mapped from a Theralux Pool+ Manager capture (#22).
+- **pH** and **ORP** sensors (registers 173 / 174: pH × 10, mV ÷ 10) for controllers with a
+  chemistry module. Enabled by default only when the controller reports a plausible reading (#22).
+
 ## [0.12.0] - 2026-10-18
 
 ### Added
