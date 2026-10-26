@@ -19,6 +19,12 @@ All notable changes to this project are documented here. The format is based on
   is renamed after that valve (e.g. "Valve 3 Water Feature"). Controllers where no valve
   switch can take it over keep the old switch on 65345 unchanged.
 
+- **Pool light colour** is now only usable while the controller reports light type 3 (the
+  Theralux colour list). The register's high byte appears to be the light type from the
+  app's Light Setup, and other types (e.g. SPA Electric Multi Plus on an Oasis) have their
+  own colour lists, so the select showed the wrong names there. It is now unavailable for
+  other types, refuses writes, and is created disabled when another type is reported (#23).
+
 ### Documentation
 - **Filter pump mode** controls Socket 1, whatever it's set to in the app (#22).
 

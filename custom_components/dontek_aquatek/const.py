@@ -395,6 +395,11 @@ def heater_setpoint_reg(regs: dict[int, int]) -> int:
 # One register: high byte 3, low byte = index into the app's colour row. The
 # app writes e.g. 768 (0x0300) for Blue and 780 (0x030c) for Flash, with no
 # power cycling. The light's on/off is its socket's mode (socket 1 on that unit).
+# The high byte is most likely the light TYPE from the app's Light Setup (#23:
+# the Oasis app offers AquaQuip, Astral, Pentair GloBrite, SPA Electric Multi
+# Plus, ..., each with its own colour list). Only type 3 (the Theralux list
+# below) is mapped, so the colour select is only usable while the controller
+# reports type 3; any other type would get the wrong colour names.
 REG_LIGHT_COLOUR = 65349
 LIGHT_COLOURS = (
     "Blue",
@@ -411,7 +416,7 @@ LIGHT_COLOURS = (
     "Disco",
     "Flash",
 )
-LIGHT_COLOUR_HIGH_BYTE = 3  # seen on every write; kept as read when non-zero
+LIGHT_COLOUR_HIGH_BYTE = 3  # light type whose colour list is LIGHT_COLOURS
 SOCKET_TYPES_LIGHT = (5, 6)  # Pool Light, Spa Light
 
 
@@ -423,10 +428,14 @@ def light_colour_str(value: int | None) -> str | None:
     return LIGHT_COLOURS[index] if index < len(LIGHT_COLOURS) else None
 
 
+def light_type_mapped(value: int | None) -> bool:
+    """True if register 65349 reports the light type whose colours we know (3)."""
+    return value is not None and value >> 8 == LIGHT_COLOUR_HIGH_BYTE
+
+
 def light_colour_value(current: int | None, colour: str) -> int:
-    """Register value for a colour, keeping the high byte the controller uses."""
-    high = (current or 0) >> 8 or LIGHT_COLOUR_HIGH_BYTE
-    return (high << 8) | LIGHT_COLOURS.index(colour)
+    """Register value for a colour on the mapped light type (high byte 3)."""
+    return (LIGHT_COLOUR_HIGH_BYTE << 8) | LIGHT_COLOURS.index(colour)
 
 
 def has_light_socket(regs: dict[int, int]) -> bool:
