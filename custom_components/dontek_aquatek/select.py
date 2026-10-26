@@ -13,9 +13,11 @@ from .const import (
     FILTER_TIMES,
     FP_MODE_TO_STR,
     FP_STR_TO_MODE,
+    LIGHT_COLOURS,
     POOL_SPA_STR_TO_MODE,
     POOL_SPA_TO_STR,
     REG_FILTER_PUMP_MODE,
+    REG_LIGHT_COLOUR,
     REG_POOL_SPA_MODE,
     REG_PUMP_MODE,
     REG_PUMP_SPEED,
@@ -25,7 +27,10 @@ from .const import (
     SOCKET_TYPES,
     SPEED_COUNT,
     STR_TO_MODE,
+    has_light_socket,
     is_oasis,
+    light_colour_str,
+    light_colour_value,
     pump_mode_str,
     socket_controllable,
     socket_label,
@@ -60,6 +65,8 @@ async def async_setup_entry(
             entities.append(SocketModeSelect(coordinator, socket))
     if REG_POOL_SPA_MODE in regs:
         entities.append(PoolSpaModeSelect(coordinator))
+    if REG_LIGHT_COLOUR in regs and has_light_socket(regs):
+        entities.append(LightColourSelect(coordinator))
     async_add_entities(entities)
 
 
@@ -273,3 +280,29 @@ class PoolSpaModeSelect(DontekEntity, SelectEntity):
         if value is None:
             return
         await self.coordinator.async_write_register(REG_POOL_SPA_MODE, value)
+
+
+class LightColourSelect(DontekEntity, SelectEntity):
+    """Pool light colour (register 65349: high byte 3, low byte = colour index).
+
+    Created when a socket is set to Pool Light or Spa Light. Only picks the
+    colour; the light's on/off is that socket's mode select (#22).
+    """
+
+    _attr_translation_key = "light_colour"
+    _attr_options = list(LIGHT_COLOURS)
+
+    def __init__(self, coordinator: DontekCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.mac}_light_colour"
+
+    @property
+    def current_option(self) -> str | None:
+        return light_colour_str(self.reg(REG_LIGHT_COLOUR))
+
+    async def async_select_option(self, option: str) -> None:
+        if option not in LIGHT_COLOURS:
+            return
+        await self.coordinator.async_write_register(
+            REG_LIGHT_COLOUR, light_colour_value(self.reg(REG_LIGHT_COLOUR), option)
+        )
