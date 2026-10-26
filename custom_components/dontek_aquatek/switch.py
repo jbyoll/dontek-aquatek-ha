@@ -60,7 +60,7 @@ async def async_setup_entry(
     for valve in switchable:
         entities.append(ValveSwitch(coordinator, valve, legacy=valve == legacy_valve))
     if legacy_valve is None and REG_WATER_FEATURE in regs:
-        # no valve switch to carry it: keep the pre-0.13 switch on 65345 as it was
+        # no valve switch to carry it: keep the pre-0.14 switch on 65345 as it was
         entities.append(RegisterSwitch(coordinator, REG_WATER_FEATURE, "water_feature"))
     async_add_entities(entities)
 

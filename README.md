@@ -55,7 +55,7 @@ same hardware with different labels.
 | 🚿 | **Valve 1–4 switch** | `switch` — turn a valve on/off, for each valve with a function other than *Pool/Spa* (those follow **Pool / Spa mode**). Named by type, e.g. *Valve 3 Water Feature*. Enabled by default for *Water Feature*, *Feature from Solar* and *Other*; created disabled for *Solar*, *In Floor* and *Heating*, which the controller moves itself |
 | 🛁 | **Pool / Spa mode** | `select` — switch between pool and spa. Enabled by default on an Aquatek with **Spa Enabled** turned on in the app's Spa Setup; otherwise created disabled |
 | 🌞 | **Roof temperature** / **Solar pump** | `sensor` / `binary_sensor` — roof sensor and solar pump flag *(Oasis only, disabled by default)* |
-| ⛲ | **Water feature** | `switch` — since v0.13 this is the switch of the valve typed *Water Feature* (or of valve 2 if none is), keeping the same entity id. Only when no valve switch can take it over is it still the old fixed switch on register `65345` (valve 2) *(disabled by default)* |
+| ⛲ | **Water feature** | `switch` — since v0.14 this is the switch of the valve typed *Water Feature* (or of valve 2 if none is), keeping the same entity id. Only when no valve switch can take it over is it still the old fixed switch on register `65345` (valve 2) *(disabled by default)* |
 
 > In **Auto** mode the pump follows its filter schedule, so the live **Running speed** can
 > differ from the **Pump speed** you set — just like the official app's status screen.
@@ -164,7 +164,7 @@ serial / QR code private.** This integration only communicates with the controll
 - [x] Heater (on/off + setpoint), Run til heated, Water feature (done in v0.7.0)
 - [ ] Chlorinator / lighting support on units that have them
 - [x] Expansion sockets (Off / On / Auto for sockets 2–5) and Pool / Spa mode on Aquatek
-- [x] Valve state and on/off switches (done in v0.12.0 / v0.13.0), separate pool / spa heater setpoints (done in v0.12.0)
+- [x] Valve state and on/off switches (done in v0.12.0 / v0.14.0), separate pool / spa heater setpoints (done in v0.12.0)
 
 ## 🤝 Contributing
 
