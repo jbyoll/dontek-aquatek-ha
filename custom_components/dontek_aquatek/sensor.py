@@ -14,7 +14,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     DOMAIN,
     REG_ORP,
+    REG_ORP_SETPOINT,
     REG_PH,
+    REG_PH_SETPOINT,
     REG_PUMP_MODE,
     REG_ROOF_TEMP_HALF,
     REG_RUN_STATE,
@@ -49,6 +51,10 @@ async def async_setup_entry(
         entities.append(PhSensor(coordinator))
     if REG_ORP in regs:
         entities.append(OrpSensor(coordinator))
+    if REG_PH_SETPOINT in regs:
+        entities.append(PhSensor(coordinator, setpoint=True))
+    if REG_ORP_SETPOINT in regs:
+        entities.append(OrpSensor(coordinator, setpoint=True))
     async_add_entities(entities)
 
 
@@ -153,22 +159,26 @@ class RoofTemperatureSensor(DontekEntity, SensorEntity):
 
 
 class PhSensor(DontekEntity, SensorEntity):
-    """Pool pH from a chemistry module (register 173, pH x 10).
+    """Pool pH from a chemistry module (register 173, pH x 10), or its set point
+    (register 65503, same encoding) when setpoint=True.
 
-    Enabled by default only if the controller reports a plausible pH at setup;
-    unavailable while it doesn't (no chemistry module).
+    Enabled by default only if the controller reports a plausible value at
+    setup; unavailable while it doesn't (no chemistry module). The set point
+    is read-only on purpose: changing it changes chemical dosing (#22).
     """
 
-    _attr_translation_key = "ph"
     _attr_device_class = SensorDeviceClass.PH
-    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
 
-    def __init__(self, coordinator: DontekCoordinator) -> None:
+    def __init__(self, coordinator: DontekCoordinator, setpoint: bool = False) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{coordinator.mac}_ph"
+        self._reg = REG_PH_SETPOINT if setpoint else REG_PH
+        self._attr_translation_key = "ph_setpoint" if setpoint else "ph"
+        self._attr_unique_id = f"{coordinator.mac}_{self._attr_translation_key}"
+        if not setpoint:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_entity_registry_enabled_default = (
-            ph_value((coordinator.data or {}).get(REG_PH)) is not None
+            ph_value((coordinator.data or {}).get(self._reg)) is not None
         )
 
     @property
@@ -177,26 +187,30 @@ class PhSensor(DontekEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        return ph_value(self.reg(REG_PH))
+        return ph_value(self.reg(self._reg))
 
 
 class OrpSensor(DontekEntity, SensorEntity):
-    """Pool ORP from a chemistry module (register 174, mV / 10).
+    """Pool ORP from a chemistry module (register 174, mV / 10), or its set
+    point (register 65502, same encoding) when setpoint=True.
 
-    Enabled by default only if the controller reports a plausible ORP at setup;
-    unavailable while it doesn't (no chemistry module).
+    Enabled by default only if the controller reports a plausible value at
+    setup; unavailable while it doesn't (no chemistry module). The set point
+    is read-only on purpose: changing it changes chemical dosing (#22).
     """
 
-    _attr_translation_key = "orp"
     _attr_native_unit_of_measurement = UnitOfElectricPotential.MILLIVOLT
-    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:flask-outline"
 
-    def __init__(self, coordinator: DontekCoordinator) -> None:
+    def __init__(self, coordinator: DontekCoordinator, setpoint: bool = False) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{coordinator.mac}_orp"
+        self._reg = REG_ORP_SETPOINT if setpoint else REG_ORP
+        self._attr_translation_key = "orp_setpoint" if setpoint else "orp"
+        self._attr_unique_id = f"{coordinator.mac}_{self._attr_translation_key}"
+        if not setpoint:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_entity_registry_enabled_default = (
-            orp_value((coordinator.data or {}).get(REG_ORP)) is not None
+            orp_value((coordinator.data or {}).get(self._reg)) is not None
         )
 
     @property
@@ -205,4 +219,4 @@ class OrpSensor(DontekEntity, SensorEntity):
 
     @property
     def native_value(self) -> int | None:
-        return orp_value(self.reg(REG_ORP))
+        return orp_value(self.reg(self._reg))

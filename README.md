@@ -54,7 +54,7 @@ same hardware with different labels.
 | 🛁 | **Pool / Spa mode** | `select` — switch between pool and spa. Enabled by default on an Aquatek with **Spa Enabled** turned on in the app's Spa Setup; otherwise created disabled |
 | 🌞 | **Roof temperature** / **Solar pump** | `sensor` / `binary_sensor` — roof sensor and solar pump flag *(Oasis only, disabled by default)* |
 | 💡 | **Pool light colour** | `select` — Blue, Aqua, Green, Gold, Magenta, Red, White, Seaside, Slow / Fast scroll, Fireworks, Disco, Flash. Created when a socket is set to *Pool Light* or *Spa Light*; switch the light itself with that socket's mode |
-| 🧪 | **pH** / **ORP** | `sensor` — readings from a chemistry module (pH, ORP in mV). Enabled by default only when the controller reports a reading; unavailable without a module |
+| 🧪 | **pH** / **ORP** (+ **set points**) | `sensor` — readings from a chemistry module (pH, ORP in mV) and the module's pH / ORP set points (read-only, since changing them changes dosing). Enabled by default only when the controller reports a value; unavailable without a module |
 | ⛲ | **Water feature** | `switch` — water feature socket on/off (e.g. spa jets / valve) *(disabled by default)* |
 
 > In **Auto** mode the pump follows its filter schedule, so the live **Running speed** can
@@ -132,6 +132,8 @@ control goes through Dontek's AWS cloud:
 | Pool light colour | `65349` | high byte `3`, low byte = colour: `0` Blue · `1` Aqua · `2` Green · `3` Gold · `4` Magenta · `5` Red · `6` White · `7` Seaside · `8` Slow scroll · `9` Fast scroll · `10` Fireworks · `11` Disco · `12` Flash (`768` = Blue) |
 | pH (chemistry module) | `173` (copy in `182`) | pH × 10 (`78` = 7.8) |
 | ORP (chemistry module) | `174` (copy in `183`) | mV ÷ 10 (`66` = 660 mV) |
+| pH set point | `65503` | pH × 10 (`74` = 7.4); the app steps 0.2 |
+| ORP set point | `65502` | mV ÷ 10 (`73` = 730 mV); the app steps 20 mV |
 | Run Once (one-shot) | enable `57630` · start `57650` · end `57670` | mapped, not yet exposed as entities |
 
 ## 🔧 Troubleshooting
@@ -164,7 +166,7 @@ serial / QR code private.** This integration only communicates with the controll
 - [ ] `number` entities for the per-speed RPM setpoints
 - [x] Expose Run Once as a one-shot action/button (done in v0.6.0)
 - [x] Heater (on/off + setpoint), Run til heated, Water feature (done in v0.7.0)
-- [x] Pool light colour, pH and ORP readings (done in v0.13.0); chlorinator / pH set points still to map
+- [x] Pool light colour, pH / ORP readings and set points (done in v0.13.0)
 - [x] Expansion sockets (Off / On / Auto for sockets 2–5) and Pool / Spa mode on Aquatek
 - [ ] Valves, and separate pool / spa heater setpoints
 

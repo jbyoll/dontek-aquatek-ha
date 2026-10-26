@@ -40,6 +40,12 @@
       },
       "orp": {
         "name": "ORP"
+      },
+      "ph_setpoint": {
+        "name": "pH set point"
+      },
+      "orp_setpoint": {
+        "name": "ORP set point"
       }
     },
     "select": {

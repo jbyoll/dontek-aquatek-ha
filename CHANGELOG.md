@@ -12,6 +12,8 @@ All notable changes to this project are documented here. The format is based on
   socket is set to Pool Light or Spa Light. Mapped from a Theralux Pool+ Manager capture (#22).
 - **pH** and **ORP** sensors (registers 173 / 174: pH × 10, mV ÷ 10) for controllers with a
   chemistry module. Enabled by default only when the controller reports a plausible reading (#22).
+- **pH set point** and **ORP set point** sensors (registers 65503 / 65502, same encodings),
+  read-only because changing them changes chemical dosing (#22).
 
 ## [0.12.0] - 2026-10-18
 

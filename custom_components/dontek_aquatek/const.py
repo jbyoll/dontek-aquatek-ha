@@ -403,10 +403,15 @@ def has_light_socket(regs: dict[int, int]) -> bool:
 # --- Water chemistry (chemistry module; mapped on a Theralux Pool+ Manager, #22) ---
 # pH x 10 (78 = 7.8) and ORP / 10 (66 = 660 mV), matching the app. Registers
 # 182 / 183 carry a second copy; 182 moved 7.8 -> 8.0 -> 7.8 during the capture
-# while 173 held what the app showed, so 173 / 174 are used. The pH set point
-# is NOT mapped yet (65503 or 65520 both read 74; 65441 = 74 is the spa set point).
+# while 173 held what the app showed, so 173 / 174 are used.
 REG_PH = 173
 REG_ORP = 174
+# Set points, same encodings (mapped from the app's writes, #22): pH 65503
+# (74 = 7.4; the app steps 0.2) and ORP 65502 (73 = 730 mV; steps 20 mV).
+# Exposed read-only: writing them changes chemical dosing. 65520 / 65521 sit
+# near the pH set point but don't move with it; 65441 is the spa set point.
+REG_PH_SETPOINT = 65503
+REG_ORP_SETPOINT = 65502
 
 
 def ph_value(raw: int | None) -> float | None:
