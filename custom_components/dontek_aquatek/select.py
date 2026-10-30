@@ -13,11 +13,9 @@ from .const import (
     FILTER_TIMES,
     FP_MODE_TO_STR,
     FP_STR_TO_MODE,
-    LIGHT_COLOURS,
     POOL_SPA_STR_TO_MODE,
     POOL_SPA_TO_STR,
     REG_FILTER_PUMP_MODE,
-    REG_LIGHT_COLOUR,
     REG_POOL_SPA_MODE,
     REG_PUMP_MODE,
     REG_PUMP_SPEED,
@@ -27,10 +25,12 @@ from .const import (
     SOCKET_TYPES,
     SPEED_COUNT,
     STR_TO_MODE,
-    has_light_socket,
     is_oasis,
+    light_colour_reg,
     light_colour_str,
     light_colour_value,
+    light_colours,
+    light_sockets,
     light_type_mapped,
     pump_mode_str,
     socket_controllable,
@@ -66,8 +66,8 @@ async def async_setup_entry(
             entities.append(SocketModeSelect(coordinator, socket))
     if REG_POOL_SPA_MODE in regs:
         entities.append(PoolSpaModeSelect(coordinator))
-    if REG_LIGHT_COLOUR in regs and has_light_socket(regs):
-        entities.append(LightColourSelect(coordinator))
+    for socket in light_sockets(regs):
+        entities.append(LightColourSelect(coordinator, socket))
     async_add_entities(entities)
 
 
@@ -284,44 +284,55 @@ class PoolSpaModeSelect(DontekEntity, SelectEntity):
 
 
 class LightColourSelect(DontekEntity, SelectEntity):
-    """Pool light colour (register 65349: high byte 3, low byte = colour index).
+    """Colour of the light on one socket (register 65348 + socket).
 
-    Created when a socket is set to Pool Light or Spa Light. Only picks the
+    Created for each socket set to Pool Light or Spa Light. Only picks the
     colour; the light's on/off is that socket's mode select (#22).
 
-    The high byte looks like the light type set in the app's Light Setup, and
-    only type 3's colour list is mapped. With any other type the select is
-    unavailable and refuses writes rather than showing the wrong colours, and
-    it's created disabled if the controller reports another type at setup (#23).
+    The register's high byte is the light type from the app's Light Setup, and
+    each type has its own colour list. Mapped: type 3 (Theralux, 13 colours)
+    and type 6 (SPA Electric Multi Plus, 11 colours). With any other type the
+    select is unavailable and refuses writes rather than showing the wrong
+    colours, and it's created disabled if that's what the controller reports
+    at setup (#23).
     """
 
-    _attr_translation_key = "light_colour"
-    _attr_options = list(LIGHT_COLOURS)
-
-    def __init__(self, coordinator: DontekCoordinator) -> None:
+    def __init__(self, coordinator: DontekCoordinator, socket: int) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{coordinator.mac}_light_colour"
-        self._attr_entity_registry_enabled_default = light_type_mapped(
-            (coordinator.data or {}).get(REG_LIGHT_COLOUR)
+        self._socket = socket
+        self._reg = light_colour_reg(socket)
+        # Socket 1 keeps the unique id the single colour select had before.
+        suffix = "light_colour" if socket == 1 else f"socket{socket}_light_colour"
+        self._attr_unique_id = f"{coordinator.mac}_{suffix}"
+        regs = coordinator.data or {}
+        self._attr_translation_key = (
+            "spa_light_colour" if regs.get(socket_type_reg(socket)) == 6 else "light_colour"
         )
+        self._attr_entity_registry_enabled_default = light_type_mapped(regs.get(self._reg))
+
+    @property
+    def options(self) -> list[str]:
+        colours = light_colours(self.reg(self._reg))
+        return list(colours) if colours else []
 
     @property
     def available(self) -> bool:
-        return super().available and light_type_mapped(self.reg(REG_LIGHT_COLOUR))
+        return super().available and light_type_mapped(self.reg(self._reg))
 
     @property
     def current_option(self) -> str | None:
-        value = self.reg(REG_LIGHT_COLOUR)
-        return light_colour_str(value) if light_type_mapped(value) else None
+        return light_colour_str(self.reg(self._reg))
 
     async def async_select_option(self, option: str) -> None:
-        if option not in LIGHT_COLOURS:
-            return
-        if not light_type_mapped(self.reg(REG_LIGHT_COLOUR)):
+        current = self.reg(self._reg)
+        colours = light_colours(current)
+        if colours is None:
             raise HomeAssistantError(
-                "This light type's colours aren't mapped yet; only the Theralux list "
-                "(type 3) is supported"
+                "This light type's colours aren't mapped yet; only Theralux (type 3) "
+                "and SPA Electric Multi Plus (type 6) are supported"
             )
+        if option not in colours:
+            return
         await self.coordinator.async_write_register(
-            REG_LIGHT_COLOUR, light_colour_value(self.reg(REG_LIGHT_COLOUR), option)
+            self._reg, light_colour_value(current, option)
         )

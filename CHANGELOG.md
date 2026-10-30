@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **SPA Electric Multi Plus colours** for the pool light colour select (light type 6): Blue,
+  Magenta, Red, Lime, Green, Aqua, White, Oceanic Views, Transcendence, Outback and Spring
+  Equinox. Mapped from an Oasis Smart capture (#22).
+
+### Fixed
+- **Pool light colour** only worked for a light on socket 1. Each socket has its own colour
+  register (65348 + socket: 65349 for socket 1, 65350 for socket 2, ...), so a light on
+  another socket got no usable select. There is now one colour select per socket set to Pool
+  Light or Spa Light, reading and writing that socket's register. Socket 1 keeps its existing
+  entity; a Spa Light's select is named "Spa light colour" (#22).
+
 ## [0.14.0] - 2026-10-27
 
 ### Added
