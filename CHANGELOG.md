@@ -11,6 +11,11 @@ All notable changes to this project are documented here. The format is based on
   Magenta, Red, Lime, Green, Aqua, White, Oceanic Views, Transcendence, Outback and Spring
   Equinox. Mapped from an Oasis Smart capture (#22).
 
+### Documentation
+- **Multi Plus timing:** leave 15–20 s between colour changes. The light changes colour by
+  power flicks, so rapid changes can put it out of step with the select; switching its socket
+  off for about a minute fixes it (#22).
+
 ### Fixed
 - **Pool light colour** only worked for a light on socket 1. Each socket has its own colour
   register (65348 + socket: 65349 for socket 1, 65350 for socket 2, ...), so a light on
