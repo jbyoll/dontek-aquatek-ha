@@ -75,6 +75,9 @@
       },
       "light_colour": {
         "name": "Pool light colour"
+      },
+      "spa_light_colour": {
+        "name": "Spa light colour"
       }
     },
     "number": {

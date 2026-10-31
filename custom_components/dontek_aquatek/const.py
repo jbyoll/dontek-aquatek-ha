@@ -392,55 +392,91 @@ def heater_setpoint_reg(regs: dict[int, int]) -> int:
 
 
 # --- Pool light colour (mapped on a Theralux Pool+ Manager, #22) ---
-# One register: high byte 3, low byte = index into the app's colour row. The
-# app writes e.g. 768 (0x0300) for Blue and 780 (0x030c) for Flash, with no
-# power cycling. The light's on/off is its socket's mode (socket 1 on that unit).
-# The high byte is most likely the light TYPE from the app's Light Setup (#23:
-# the Oasis app offers AquaQuip, Astral, Pentair GloBrite, SPA Electric Multi
-# Plus, ..., each with its own colour list). Only type 3 (the Theralux list
-# below) is mapped, so the colour select is only usable while the controller
-# reports type 3; any other type would get the wrong colour names.
-REG_LIGHT_COLOUR = 65349
-LIGHT_COLOURS = (
-    "Blue",
-    "Aqua",
-    "Green",
-    "Gold",
-    "Magenta",
-    "Red",
-    "White",
-    "Seaside",
-    "Slow scroll",
-    "Fast scroll",
-    "Fireworks",
-    "Disco",
-    "Flash",
-)
-LIGHT_COLOUR_HIGH_BYTE = 3  # light type whose colour list is LIGHT_COLOURS
+# One register per socket: socket n's light is 65348 + n (65349 for socket 1,
+# 65350 for socket 2, ...). High byte = the light type picked in the app's
+# Light Setup, low byte = index into that type's colour row. Changing colour is
+# one write, no power cycling; the light's on/off is its socket's mode.
+#   type 3: Theralux, light on socket 1 (#22): 768 (0x0300) Blue ... 780 Flash.
+#   type 6: SPA Electric Multi Plus on an Oasis, light on socket 2 (#22):
+#           1536 (0x0600) Blue ... 1546 Spring Equinox; 1547+ is rejected.
+# Sockets that aren't lights read 0 there. Other light types have their own
+# lists and aren't mapped yet, so the select is unavailable for them rather
+# than showing the wrong colour names.
+REG_LIGHT_COLOUR = 65349  # socket 1
+LIGHT_COLOURS_BY_TYPE: dict[int, tuple[str, ...]] = {
+    3: (
+        "Blue",
+        "Aqua",
+        "Green",
+        "Gold",
+        "Magenta",
+        "Red",
+        "White",
+        "Seaside",
+        "Slow scroll",
+        "Fast scroll",
+        "Fireworks",
+        "Disco",
+        "Flash",
+    ),
+    6: (
+        "Blue",
+        "Magenta",
+        "Red",
+        "Lime",
+        "Green",
+        "Aqua",
+        "White",
+        "Oceanic Views",
+        "Transcendence",
+        "Outback",
+        "Spring Equinox",
+    ),
+}
 SOCKET_TYPES_LIGHT = (5, 6)  # Pool Light, Spa Light
 
 
-def light_colour_str(value: int | None) -> str | None:
-    """Colour name from register 65349 (low byte), or None if unknown."""
+def light_colour_reg(socket: int) -> int:
+    """Colour register of the light on socket n (65349 for socket 1)."""
+    return REG_LIGHT_COLOUR + socket - 1
+
+
+def light_colours(value: int | None) -> tuple[str, ...] | None:
+    """Colour list for the light type in a colour register, or None if unmapped."""
     if value is None:
         return None
+    return LIGHT_COLOURS_BY_TYPE.get(value >> 8)
+
+
+def light_colour_str(value: int | None) -> str | None:
+    """Colour name from a colour register, or None if unknown."""
+    colours = light_colours(value)
+    if colours is None:
+        return None
     index = value & 0xFF
-    return LIGHT_COLOURS[index] if index < len(LIGHT_COLOURS) else None
+    return colours[index] if index < len(colours) else None
 
 
 def light_type_mapped(value: int | None) -> bool:
-    """True if register 65349 reports the light type whose colours we know (3)."""
-    return value is not None and value >> 8 == LIGHT_COLOUR_HIGH_BYTE
+    """True if a colour register reports a light type whose colours we know."""
+    return light_colours(value) is not None
 
 
 def light_colour_value(current: int | None, colour: str) -> int:
-    """Register value for a colour on the mapped light type (high byte 3)."""
-    return (LIGHT_COLOUR_HIGH_BYTE << 8) | LIGHT_COLOURS.index(colour)
+    """Register value for a colour, keeping the light type in the high byte."""
+    colours = light_colours(current)
+    if colours is None or colour not in colours:
+        raise ValueError(f"{colour!r} isn't a colour of this light type")
+    return (current >> 8 << 8) | colours.index(colour)
 
 
-def has_light_socket(regs: dict[int, int]) -> bool:
-    """True if any socket is set to Pool Light or Spa Light."""
-    return any(regs.get(socket_type_reg(s)) in SOCKET_TYPES_LIGHT for s in range(1, SOCKET_COUNT + 1))
+def light_sockets(regs: dict[int, int]) -> list[int]:
+    """Sockets set to Pool Light or Spa Light that report a colour register."""
+    return [
+        s
+        for s in range(1, SOCKET_COUNT + 1)
+        if regs.get(socket_type_reg(s)) in SOCKET_TYPES_LIGHT and light_colour_reg(s) in regs
+    ]
 
 
 # --- Water chemistry (chemistry module; mapped on a Theralux Pool+ Manager, #22) ---
