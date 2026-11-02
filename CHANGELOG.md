@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Light type 3 is now named **Aquaquip Instatouch** instead of "Theralux" (Theralux is the
+  controller brand, not the light) in the README and the select's error message (#22).
+
+### Documentation
+- The 15–20 s gap between colour changes now applies to all lights, not just Multi Plus.
+  Instatouch lights glitch the same way, even from the Dontek app (#22).
+
 ## [0.15.0] - 2026-10-31
 
 ### Added

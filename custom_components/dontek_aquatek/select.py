@@ -290,11 +290,11 @@ class LightColourSelect(DontekEntity, SelectEntity):
     colour; the light's on/off is that socket's mode select (#22).
 
     The register's high byte is the light type from the app's Light Setup, and
-    each type has its own colour list. Mapped: type 3 (Theralux, 13 colours)
-    and type 6 (SPA Electric Multi Plus, 11 colours). With any other type the
-    select is unavailable and refuses writes rather than showing the wrong
-    colours, and it's created disabled if that's what the controller reports
-    at setup (#23).
+    each type has its own colour list. Mapped: type 3 (Aquaquip Instatouch,
+    13 colours) and type 6 (SPA Electric Multi Plus, 11 colours). With any
+    other type the select is unavailable and refuses writes rather than
+    showing the wrong colours, and it's created disabled if that's what the
+    controller reports at setup (#23).
     """
 
     def __init__(self, coordinator: DontekCoordinator, socket: int) -> None:
@@ -328,8 +328,8 @@ class LightColourSelect(DontekEntity, SelectEntity):
         colours = light_colours(current)
         if colours is None:
             raise HomeAssistantError(
-                "This light type's colours aren't mapped yet; only Theralux (type 3) "
-                "and SPA Electric Multi Plus (type 6) are supported"
+                "This light type's colours aren't mapped yet; only Aquaquip Instatouch "
+                "(type 3) and SPA Electric Multi Plus (type 6) are supported"
             )
         if option not in colours:
             return
