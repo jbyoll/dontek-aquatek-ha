@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Dontek Aquatek for Home Assistant" width="100%">
+  <img src="https://raw.githubusercontent.com/jbyoll/dontek-aquatek-ha/main/assets/banner.png" alt="Dontek Aquatek for Home Assistant" width="100%">
 </p>
 
 <h1 align="center">Dontek Aquatek — <i>Unofficial</i> Home Assistant integration</h1>
@@ -14,7 +14,7 @@
   <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge" alt="HACS Custom"></a>
   <a href="https://github.com/jbyoll/dontek-aquatek-ha/releases"><img src="https://img.shields.io/github/v/release/jbyoll/dontek-aquatek-ha?style=for-the-badge" alt="Release"></a>
   <a href="https://github.com/jbyoll/dontek-aquatek-ha/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/jbyoll/dontek-aquatek-ha/validate.yml?style=for-the-badge&label=validate" alt="Validate"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/jbyoll/dontek-aquatek-ha?style=for-the-badge" alt="License"></a>
+  <a href="https://github.com/jbyoll/dontek-aquatek-ha/blob/main/LICENSE"><img src="https://img.shields.io/github/license/jbyoll/dontek-aquatek-ha?style=for-the-badge" alt="License"></a>
 </p>
 
 ---
@@ -88,7 +88,7 @@ Add the integration from the UI and enter the **serial number** printed on the c
 label — the long number under the QR code, e.g. `56559560543361145`. You can also enter the
 12-character MAC directly.
 
-<p align="center"><img src="assets/icon.png" width="96" alt=""></p>
+<p align="center"><img src="https://raw.githubusercontent.com/jbyoll/dontek-aquatek-ha/main/assets/icon.png" width="96" alt=""></p>
 
 That's it — the device and its entities appear automatically.
 
@@ -176,8 +176,8 @@ serial / QR code private.** This integration only communicates with the controll
 ## 🤝 Contributing
 
 Issues and PRs welcome — especially register captures from **other Dontek models**. See
-[CONTRIBUTING.md](CONTRIBUTING.md).
+[CONTRIBUTING.md](https://github.com/jbyoll/dontek-aquatek-ha/blob/main/CONTRIBUTING.md).
 
 ## 📄 License
 
-[MIT](LICENSE) © 2026 Jason Brandon · Not affiliated with Dontek Electronics.
+[MIT](https://github.com/jbyoll/dontek-aquatek-ha/blob/main/LICENSE) © 2026 Jason Brandon · Not affiliated with Dontek Electronics.

@@ -14,6 +14,10 @@ All notable changes to this project are documented here. The format is based on
 - The 15–20 s gap between colour changes now applies to all lights, not just Multi Plus.
   Instatouch lights glitch the same way, even from the Dontek app (#22).
 
+### Fixed
+- README banner and icon were broken on the HACS page: they used relative paths, which HACS
+  can't resolve. They now use full GitHub URLs, as do the LICENSE and CONTRIBUTING links.
+
 ## [0.15.0] - 2026-10-31
 
 ### Added
