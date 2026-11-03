@@ -13,6 +13,10 @@ All notable changes to this project are documented here. The format is based on
   light leaves its select unavailable, and writes to it are refused. The select's name
   (Pool / Spa light colour) follows the socket's current type.
 
+### Fixed
+- README banner and icon were broken on the HACS page: they used relative paths, which HACS
+  can't resolve. They now use full GitHub URLs, as do the LICENSE and CONTRIBUTING links.
+
 ## [0.15.0] - 2026-10-31
 
 ### Added
