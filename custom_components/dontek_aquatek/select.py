@@ -309,11 +309,11 @@ class LightColourSelect(DontekEntity, SelectEntity):
     mode select (#22).
 
     The register's high byte is the light type from the app's Light Setup, and
-    each type has its own colour list. Mapped: type 3 (Theralux, 13 colours)
-    and type 6 (SPA Electric Multi Plus, 11 colours). Any other type gets
-    generic names (Colour 1, Colour 2, ...) for the same indexes, and the
-    light_type / colours_mapped attributes show which it is. With no light
-    type set the select is unavailable.
+    each type has its own colour list. Mapped: type 3 (Aquaquip Instatouch,
+    13 colours) and type 6 (SPA Electric Multi Plus, 11 colours). Any other
+    type gets generic names (Colour 1, Colour 2, ...) for the same indexes,
+    and the light_type / colours_mapped attributes show which it is. With no
+    light type set the select is unavailable.
     """
 
     def __init__(self, coordinator: DontekCoordinator, socket: int) -> None:

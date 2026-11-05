@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Changed
+- Light type 3 is now named **Aquaquip Instatouch** instead of "Theralux" (Theralux is the
+  controller brand, not the light) in the README and code comments (#22).
 - **Light colour selects follow the sockets live.** A socket set to Pool Light or Spa Light
   after setup (in the app or with its type select) gets its colour select on the next poll,
   so moving a light to another socket no longer needs a restart. A socket that stops being a
@@ -18,6 +20,10 @@ All notable changes to this project are documented here. The format is based on
   rejects an index the light doesn't have.
 - **Expansion sockets appear without a restart.** A socket that shows up after setup gets its
   type and mode selects, name and running sensor on the next poll.
+
+### Documentation
+- The 15–20 s gap between colour changes now applies to all lights, not just Multi Plus.
+  Instatouch lights glitch the same way, even from the Dontek app (#22).
 
 ### Fixed
 - README banner and icon were broken on the HACS page: they used relative paths, which HACS

@@ -396,7 +396,8 @@ def heater_setpoint_reg(regs: dict[int, int]) -> int:
 # 65350 for socket 2, ...). High byte = the light type picked in the app's
 # Light Setup, low byte = index into that type's colour row. Changing colour is
 # one write, no power cycling; the light's on/off is its socket's mode.
-#   type 3: Theralux, light on socket 1 (#22): 768 (0x0300) Blue ... 780 Flash.
+#   type 3: Aquaquip Instatouch on a Theralux, light on socket 1 (#22):
+#           768 (0x0300) Blue ... 780 Flash.
 #   type 6: SPA Electric Multi Plus on an Oasis, light on socket 2 (#22):
 #           1536 (0x0600) Blue ... 1546 Spring Equinox; 1547+ is rejected.
 # Sockets that aren't lights read 0 there. Light types without a mapped list
