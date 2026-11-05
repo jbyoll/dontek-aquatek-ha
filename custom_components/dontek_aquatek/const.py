@@ -399,9 +399,11 @@ def heater_setpoint_reg(regs: dict[int, int]) -> int:
 #   type 3: Theralux, light on socket 1 (#22): 768 (0x0300) Blue ... 780 Flash.
 #   type 6: SPA Electric Multi Plus on an Oasis, light on socket 2 (#22):
 #           1536 (0x0600) Blue ... 1546 Spring Equinox; 1547+ is rejected.
-# Sockets that aren't lights read 0 there. Other light types have their own
-# lists and aren't mapped yet, so the select is unavailable for them rather
-# than showing the wrong colour names.
+# Sockets that aren't lights read 0 there. Light types without a mapped list
+# get generic names (Colour 1, Colour 2, ...) for the same indexes, so the
+# light is usable before anyone captures its names. The controller rejects
+# indexes the light type doesn't have (seen on type 6), so a wrong pick is
+# refused rather than doing something odd.
 REG_LIGHT_COLOUR = 65349  # socket 1
 LIGHT_COLOURS_BY_TYPE: dict[int, tuple[str, ...]] = {
     3: (
@@ -433,6 +435,7 @@ LIGHT_COLOURS_BY_TYPE: dict[int, tuple[str, ...]] = {
         "Spring Equinox",
     ),
 }
+LIGHT_GENERIC_COLOUR_COUNT = 16  # more than any mapped type has
 SOCKET_TYPES_LIGHT = (5, 6)  # Pool Light, Spa Light
 
 
@@ -441,11 +444,27 @@ def light_colour_reg(socket: int) -> int:
     return REG_LIGHT_COLOUR + socket - 1
 
 
-def light_colours(value: int | None) -> tuple[str, ...] | None:
-    """Colour list for the light type in a colour register, or None if unmapped."""
-    if value is None:
+def light_type(value: int | None) -> int | None:
+    """Light type (high byte) of a colour register, or None if no light type is set."""
+    if value is None or value >> 8 == 0:
         return None
-    return LIGHT_COLOURS_BY_TYPE.get(value >> 8)
+    return value >> 8
+
+
+def light_colours(value: int | None) -> tuple[str, ...] | None:
+    """Colour list for the light type in a colour register.
+
+    Mapped types get their names; any other set type gets Colour 1, Colour 2,
+    ... (extended to cover the current index). None if no light type is set.
+    """
+    ltype = light_type(value)
+    if ltype is None:
+        return None
+    mapped = LIGHT_COLOURS_BY_TYPE.get(ltype)
+    if mapped is not None:
+        return mapped
+    count = max(LIGHT_GENERIC_COLOUR_COUNT, (value & 0xFF) + 1)
+    return tuple(f"Colour {i + 1}" for i in range(count))
 
 
 def light_colour_str(value: int | None) -> str | None:
@@ -458,8 +477,8 @@ def light_colour_str(value: int | None) -> str | None:
 
 
 def light_type_mapped(value: int | None) -> bool:
-    """True if a colour register reports a light type whose colours we know."""
-    return light_colours(value) is not None
+    """True if a colour register reports a light type whose colour names we know."""
+    return light_type(value) in LIGHT_COLOURS_BY_TYPE
 
 
 def light_colour_value(current: int | None, colour: str) -> int:

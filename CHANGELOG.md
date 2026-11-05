@@ -12,6 +12,12 @@ All notable changes to this project are documented here. The format is based on
   so moving a light to another socket no longer needs a restart. A socket that stops being a
   light leaves its select unavailable, and writes to it are refused. The select's name
   (Pool / Spa light colour) follows the socket's current type.
+- **Unmapped light types are usable.** A light type without a mapped colour list gets generic
+  names (Colour 1, Colour 2, …) for the same indexes instead of an unavailable select. The
+  select's `light_type` and `colours_mapped` attributes show which it is. The controller
+  rejects an index the light doesn't have.
+- **Expansion sockets appear without a restart.** A socket that shows up after setup gets its
+  type and mode selects, name and running sensor on the next poll.
 
 ### Fixed
 - README banner and icon were broken on the HACS page: they used relative paths, which HACS
