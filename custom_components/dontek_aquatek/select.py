@@ -4,7 +4,7 @@ from __future__ import annotations
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -23,6 +23,7 @@ from .const import (
     SOCKET_COUNT,
     SOCKET_TYPE_NONE,
     SOCKET_TYPES,
+    SOCKET_TYPES_LIGHT,
     SPEED_COUNT,
     STR_TO_MODE,
     is_oasis,
@@ -66,9 +67,20 @@ async def async_setup_entry(
             entities.append(SocketModeSelect(coordinator, socket))
     if REG_POOL_SPA_MODE in regs:
         entities.append(PoolSpaModeSelect(coordinator))
-    for socket in light_sockets(regs):
-        entities.append(LightColourSelect(coordinator, socket))
+    light_added: set[int] = set(light_sockets(regs))
+    entities.extend(LightColourSelect(coordinator, s) for s in sorted(light_added))
     async_add_entities(entities)
+
+    @callback
+    def _add_new_lights() -> None:
+        # A socket set to Pool Light or Spa Light after setup (in the app or
+        # with its type select) gets its colour select on the next poll.
+        new = set(light_sockets(coordinator.data or {})) - light_added
+        if new:
+            light_added.update(new)
+            async_add_entities(LightColourSelect(coordinator, s) for s in sorted(new))
+
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_lights))
 
 
 class PumpModeSelect(DontekEntity, SelectEntity):
@@ -286,8 +298,11 @@ class PoolSpaModeSelect(DontekEntity, SelectEntity):
 class LightColourSelect(DontekEntity, SelectEntity):
     """Colour of the light on one socket (register 65348 + socket).
 
-    Created for each socket set to Pool Light or Spa Light. Only picks the
-    colour; the light's on/off is that socket's mode select (#22).
+    Created for each socket set to Pool Light or Spa Light, at setup or on the
+    first poll after a socket becomes one, so moving a light to another socket
+    needs no restart. If the socket stops being a light the select is
+    unavailable. Only picks the colour; the light's on/off is that socket's
+    mode select (#22).
 
     The register's high byte is the light type from the app's Light Setup, and
     each type has its own colour list. Mapped: type 3 (Theralux, 13 colours)
@@ -305,9 +320,6 @@ class LightColourSelect(DontekEntity, SelectEntity):
         suffix = "light_colour" if socket == 1 else f"socket{socket}_light_colour"
         self._attr_unique_id = f"{coordinator.mac}_{suffix}"
         regs = coordinator.data or {}
-        self._attr_translation_key = (
-            "spa_light_colour" if regs.get(socket_type_reg(socket)) == 6 else "light_colour"
-        )
         self._attr_entity_registry_enabled_default = light_type_mapped(regs.get(self._reg))
 
     @property
@@ -316,8 +328,17 @@ class LightColourSelect(DontekEntity, SelectEntity):
         return list(colours) if colours else []
 
     @property
+    def name(self) -> str:
+        spa = self.reg(socket_type_reg(self._socket)) == 6
+        return "Spa light colour" if spa else "Pool light colour"
+
+    @property
     def available(self) -> bool:
-        return super().available and light_type_mapped(self.reg(self._reg))
+        return (
+            super().available
+            and self.reg(socket_type_reg(self._socket)) in SOCKET_TYPES_LIGHT
+            and light_type_mapped(self.reg(self._reg))
+        )
 
     @property
     def current_option(self) -> str | None:
@@ -326,6 +347,10 @@ class LightColourSelect(DontekEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         current = self.reg(self._reg)
         colours = light_colours(current)
+        if self.reg(socket_type_reg(self._socket)) not in SOCKET_TYPES_LIGHT:
+            raise HomeAssistantError(
+                f"Socket {self._socket} isn't set to Pool Light or Spa Light any more"
+            )
         if colours is None:
             raise HomeAssistantError(
                 "This light type's colours aren't mapped yet; only Theralux (type 3) "
