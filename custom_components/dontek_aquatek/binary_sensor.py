@@ -26,7 +26,7 @@ from .const import (
     valve_type_str,
 )
 from .coordinator import DontekCoordinator
-from .entity import DontekEntity
+from .entity import DontekEntity, add_entities_live
 
 
 async def async_setup_entry(
@@ -34,11 +34,7 @@ async def async_setup_entry(
 ) -> None:
     coordinator: DontekCoordinator = hass.data[DOMAIN][entry.entry_id]
     regs = coordinator.data or {}
-    entities: list[DontekEntity] = [
-        SocketRunningSensor(coordinator, socket)
-        for socket in range(1, SOCKET_COUNT + 1)
-        if socket_present(regs, socket) and socket_running_reg(socket) in regs
-    ]
+    entities: list[DontekEntity] = []
     for valve in range(1, VALVE_COUNT + 1):
         vtype = regs.get(valve_type_reg(valve))
         if vtype and valve_state_reg(valve) in regs:
@@ -46,6 +42,17 @@ async def async_setup_entry(
     if is_oasis(regs):
         entities.append(SolarPumpRunningSensor(coordinator))
     async_add_entities(entities)
+    add_entities_live(
+        entry,
+        coordinator,
+        async_add_entities,
+        lambda regs: [
+            s
+            for s in range(1, SOCKET_COUNT + 1)
+            if socket_present(regs, s) and socket_running_reg(s) in regs
+        ],
+        lambda socket: [SocketRunningSensor(coordinator, socket)],
+    )
 
 
 class SocketRunningSensor(DontekEntity, BinarySensorEntity):

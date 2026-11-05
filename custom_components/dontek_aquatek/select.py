@@ -4,7 +4,7 @@ from __future__ import annotations
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -32,6 +32,7 @@ from .const import (
     light_colour_value,
     light_colours,
     light_sockets,
+    light_type,
     light_type_mapped,
     pump_mode_str,
     socket_controllable,
@@ -43,7 +44,7 @@ from .const import (
     socket_type_str,
 )
 from .coordinator import DontekCoordinator
-from .entity import DontekEntity
+from .entity import DontekEntity, add_entities_live
 
 
 async def async_setup_entry(
@@ -58,29 +59,32 @@ async def async_setup_entry(
     for ft, regs in FILTER_TIMES.items():
         entities.append(FilterTimeSpeedSelect(coordinator, ft, regs["speed"]))
     regs = coordinator.data or {}
-    # Socket 1's mode is the Filter Pump select above.
-    for socket in range(1, SOCKET_COUNT + 1):
-        if not socket_present(regs, socket):
-            continue
-        entities.append(SocketTypeSelect(coordinator, socket))
-        if socket > 1:
-            entities.append(SocketModeSelect(coordinator, socket))
     if REG_POOL_SPA_MODE in regs:
         entities.append(PoolSpaModeSelect(coordinator))
-    light_added: set[int] = set(light_sockets(regs))
-    entities.extend(LightColourSelect(coordinator, s) for s in sorted(light_added))
     async_add_entities(entities)
 
-    @callback
-    def _add_new_lights() -> None:
-        # A socket set to Pool Light or Spa Light after setup (in the app or
-        # with its type select) gets its colour select on the next poll.
-        new = set(light_sockets(coordinator.data or {})) - light_added
-        if new:
-            light_added.update(new)
-            async_add_entities(LightColourSelect(coordinator, s) for s in sorted(new))
+    def _socket_selects(socket: int) -> list[DontekEntity]:
+        # Socket 1's mode is the Filter Pump select above.
+        if socket == 1:
+            return [SocketTypeSelect(coordinator, socket)]
+        return [SocketTypeSelect(coordinator, socket), SocketModeSelect(coordinator, socket)]
 
-    entry.async_on_unload(coordinator.async_add_listener(_add_new_lights))
+    # Sockets (incl. expansion sockets fitted later) and lights (incl. one
+    # moved to another socket) are picked up on the next poll, no restart.
+    add_entities_live(
+        entry,
+        coordinator,
+        async_add_entities,
+        lambda regs: [s for s in range(1, SOCKET_COUNT + 1) if socket_present(regs, s)],
+        _socket_selects,
+    )
+    add_entities_live(
+        entry,
+        coordinator,
+        async_add_entities,
+        lambda regs: [("light", s) for s in light_sockets(regs)],
+        lambda key: [LightColourSelect(coordinator, key[1])],
+    )
 
 
 class PumpModeSelect(DontekEntity, SelectEntity):
@@ -306,10 +310,10 @@ class LightColourSelect(DontekEntity, SelectEntity):
 
     The register's high byte is the light type from the app's Light Setup, and
     each type has its own colour list. Mapped: type 3 (Aquaquip Instatouch,
-    13 colours) and type 6 (SPA Electric Multi Plus, 11 colours). With any
-    other type the select is unavailable and refuses writes rather than
-    showing the wrong colours, and it's created disabled if that's what the
-    controller reports at setup (#23).
+    13 colours) and type 6 (SPA Electric Multi Plus, 11 colours). Any other
+    type gets generic names (Colour 1, Colour 2, ...) for the same indexes,
+    and the light_type / colours_mapped attributes show which it is. With no
+    light type set the select is unavailable.
     """
 
     def __init__(self, coordinator: DontekCoordinator, socket: int) -> None:
@@ -320,7 +324,7 @@ class LightColourSelect(DontekEntity, SelectEntity):
         suffix = "light_colour" if socket == 1 else f"socket{socket}_light_colour"
         self._attr_unique_id = f"{coordinator.mac}_{suffix}"
         regs = coordinator.data or {}
-        self._attr_entity_registry_enabled_default = light_type_mapped(regs.get(self._reg))
+        self._attr_entity_registry_enabled_default = light_colours(regs.get(self._reg)) is not None
 
     @property
     def options(self) -> list[str]:
@@ -337,8 +341,17 @@ class LightColourSelect(DontekEntity, SelectEntity):
         return (
             super().available
             and self.reg(socket_type_reg(self._socket)) in SOCKET_TYPES_LIGHT
-            and light_type_mapped(self.reg(self._reg))
+            and light_colours(self.reg(self._reg)) is not None
         )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int | bool | None]:
+        value = self.reg(self._reg)
+        return {
+            "socket": self._socket,
+            "light_type": light_type(value),
+            "colours_mapped": light_type_mapped(value),
+        }
 
     @property
     def current_option(self) -> str | None:
@@ -353,8 +366,8 @@ class LightColourSelect(DontekEntity, SelectEntity):
             )
         if colours is None:
             raise HomeAssistantError(
-                "This light type's colours aren't mapped yet; only Aquaquip Instatouch "
-                "(type 3) and SPA Electric Multi Plus (type 6) are supported"
+                f"No light type is set for socket {self._socket}; pick one in the app's "
+                "Light Setup"
             )
         if option not in colours:
             return
